@@ -23,7 +23,7 @@
 #define mainGENERIC_PRIORITY (tskIDLE_PRIORITY)
 #define mainGENERIC_STACK_SIZE ((unsigned short)2560)
 
-static TaskHandle_t DemoTask = NULL;
+static TaskHandle_t DemoTask = NULL; //Init with NULL, so you can check if it has been initialized
 
 typedef struct buttons_buffer {
     unsigned char buttons[SDL_NUM_SCANCODES];
@@ -44,6 +44,7 @@ void xGetButtonInput(void)
 
 void vDemoTask(void *pvParameters)
 {
+    /* ######## Initialization ############## */
     // structure to store time retrieved from Linux kernel
     static struct timespec the_time;
     static char our_time_string[100];
@@ -55,6 +56,7 @@ void vDemoTask(void *pvParameters)
     // backend.
     tumDrawBindThread();
 
+    /* ############# Actual program ################ */
     while (1) {
         tumEventFetchEvents(FETCH_EVENT_NONBLOCK); // Query events backend for new events, ie. button presses
         xGetButtonInput(); // Update global input
@@ -100,10 +102,12 @@ void vDemoTask(void *pvParameters)
 
 int main(int argc, char *argv[])
 {
-    char *bin_folder_path = tumUtilGetBinFolderPath(argv[0]);
+    /* Just leave all this stuff in here */
+    char *bin_folder_path = tumUtilGetBinFolderPath(argv[0]); //Required for images
 
     printf("Initializing: ");
 
+    /* Initialization (mostly of the mutexes) */
     if (tumDrawInit(bin_folder_path)) {
         PRINT_ERROR("Failed to initialize drawing");
         goto err_init_drawing;
@@ -125,6 +129,7 @@ int main(int argc, char *argv[])
         goto err_buttons_lock;
     }
 
+    /* Here You can start modifying  */
     if (xTaskCreate(vDemoTask, "DemoTask", mainGENERIC_STACK_SIZE * 2, NULL,
                     mainGENERIC_PRIORITY, &DemoTask) != pdPASS) {
         goto err_demotask;

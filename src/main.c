@@ -23,6 +23,13 @@
 #define mainGENERIC_PRIORITY (tskIDLE_PRIORITY)
 #define mainGENERIC_STACK_SIZE ((unsigned short)2560)
 
+#define ROTATION_RADIUS     100
+#define DEFAULT_RADIUS      30
+#define TRIANGLE_LENGTH     70
+#define TRIANGLE_HEIGHT     60     
+#define SQUARE_LENGTH       60
+#define TEXT_OFFSET_Y       150
+
 static TaskHandle_t DemoTask = NULL; //Init with NULL, so you can check if it has been initialized
 
 typedef struct buttons_buffer {
@@ -45,10 +52,14 @@ void xGetButtonInput(void)
 void vDemoTask(void *pvParameters)
 {
     /* ######## Initialization ############## */
-    // structure to store time retrieved from Linux kernel
-    static struct timespec the_time;
-    static char our_time_string[100];
-    static int our_time_strings_width = 0;
+    // structure to store my text
+    static char my_string[100];
+    static int my_string_width = 0;
+    static coord_t mycoordinates[4];
+    static float i=0;
+    static int offset_x;
+    static int offset_y;
+
 
     // Needed such that Gfx library knows which thread controlls drawing
     // Only one thread can call tumDrawUpdateScreen while and thread can call
@@ -75,28 +86,66 @@ void vDemoTask(void *pvParameters)
 
         tumDrawClear(White); // Clear screen
 
-        clock_gettime(CLOCK_REALTIME,
-                      &the_time); // Get kernel real time
+        //Calculate offset for moving parts
+        offset_x = (int) (ROTATION_RADIUS * cos(i));
+        offset_y = (int) (ROTATION_RADIUS * sin(i));
+        
+        tumDrawArc 	(   SCREEN_WIDTH / 2 - offset_x, 
+                        SCREEN_HEIGHT / 2 + offset_y,
+		                DEFAULT_RADIUS,
+		                0,
+		                359,
+	                    Purple);
 
-        // Format our string into our char array
-        sprintf(our_time_string,
-                "There has been %ld seconds since the Epoch. Press Q to quit",
-                (long int)the_time.tv_sec);
+        //Create the points for the triangle
+        //Left point
+        mycoordinates[0].x = SCREEN_WIDTH / 2 - TRIANGLE_LENGTH / 2;
+        mycoordinates[0].y = SCREEN_HEIGHT / 2 + TRIANGLE_HEIGHT / 2;
+        //Right point
+        mycoordinates[1].x = SCREEN_WIDTH / 2 + TRIANGLE_LENGTH / 2;
+        mycoordinates[1].y = SCREEN_HEIGHT / 2 + TRIANGLE_HEIGHT / 2;
+        //Top point
+        mycoordinates[2].x = SCREEN_WIDTH / 2;
+        mycoordinates[2].y = SCREEN_HEIGHT / 2 - TRIANGLE_HEIGHT / 2;
 
+        tumDrawPoly(mycoordinates, 3, Teal);  //Draw the triangle
+
+
+        //Create the points for the square
+        //Top left point
+        mycoordinates[0].x = SCREEN_WIDTH / 2 - SQUARE_LENGTH / 2 + offset_x;
+        mycoordinates[0].y = SCREEN_HEIGHT / 2 - SQUARE_LENGTH / 2 - offset_y;
+        //Top right point
+        mycoordinates[1].x = SCREEN_WIDTH / 2 + SQUARE_LENGTH / 2 + offset_x;
+        mycoordinates[1].y = SCREEN_HEIGHT / 2 - SQUARE_LENGTH / 2 - offset_y;
+        //Bottom right point
+        mycoordinates[2].x = SCREEN_WIDTH / 2 + SQUARE_LENGTH / 2 + offset_x;
+        mycoordinates[2].y = SCREEN_HEIGHT / 2 + SQUARE_LENGTH / 2 - offset_y;
+        //Bottom left point
+        mycoordinates[3].x = SCREEN_WIDTH / 2 - SQUARE_LENGTH / 2 + offset_x;
+        mycoordinates[3].y = SCREEN_HEIGHT / 2 + SQUARE_LENGTH / 2 - offset_y;
+
+        tumDrawPoly(mycoordinates, 4, Fuchsia);  //Draw the sqare
+
+        // Format the string into the char array
+        sprintf(my_string, "Hello World");
         // Get the width of the string on the screen so we can center it
         // Returns 0 if width was successfully obtained
-        if (!tumGetTextSize((char *)our_time_string,
-                            &our_time_strings_width, NULL))
-            tumDrawText(our_time_string,
-                        SCREEN_WIDTH / 2 -
-                        our_time_strings_width / 2,
-                        SCREEN_HEIGHT / 2 - DEFAULT_FONT_SIZE / 2,
+        if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
+            tumDrawText(my_string,
+                        SCREEN_WIDTH / 2 - my_string_width / 2,
+                        SCREEN_HEIGHT / 2 - DEFAULT_FONT_SIZE / 2 + TEXT_OFFSET_Y,
                         TUMBlue);
 
         tumDrawUpdateScreen(); // Refresh the screen to draw string
 
-        // Basic sleep of 1000 milliseconds
-        vTaskDelay((TickType_t)1000);
+        if(i >= 6.283)
+            i=0;
+        else
+            i += 0.02;
+        
+
+        vTaskDelay((TickType_t)1);
     }
 }
 

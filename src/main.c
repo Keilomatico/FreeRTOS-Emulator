@@ -30,7 +30,9 @@
 #define SQUARE_LENGTH       60
 #define TEXT_OFFSET_Y       150
 
-static TaskHandle_t DemoTask = NULL; //Init with NULL, so you can check if it has been initialized
+static TaskHandle_t Exercise2 = NULL; //Init with NULL, so you can check if it has been initialized
+static TaskHandle_t Exercise3 = NULL;
+static TaskHandle_t Exercise4 = NULL;
 static TaskHandle_t BufferSwap = NULL;
 
 static SemaphoreHandle_t DrawSignal = NULL;
@@ -125,7 +127,7 @@ void vSwapBuffers(void *pvParameters)
     }
 }
 
-void vDemoTask(void *pvParameters)
+void vExercise2(void *pvParameters)
 {
     static char my_string[100]; // structure to store my text
     static int my_string_width = 0;
@@ -213,6 +215,60 @@ void vDemoTask(void *pvParameters)
     }
 }
 
+void vExercise3(void *pvParameters)
+{    
+    static char my_string[100]; // structure to store my text
+    static int my_string_width = 0;
+
+    while (1) {
+        if (DrawSignal) {
+            if (xSemaphoreTake(DrawSignal, portMAX_DELAY) == pdTRUE) {
+                xSemaphoreTake(ScreenLock, portMAX_DELAY);
+                
+                tumDrawClear(White); // Clear screen
+
+                // Format the string into the char array
+                sprintf(my_string, "This is exercise 3");
+                // Get the width of the string on the screen so we can center it
+                // Returns 0 if width was successfully obtained
+                if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
+                    tumDrawText(my_string,
+                                SCREEN_WIDTH / 2 - my_string_width / 2,
+                                SCREEN_HEIGHT / 2 - DEFAULT_FONT_SIZE / 2,
+                                TUMBlue);
+                xSemaphoreGive(ScreenLock);
+            }
+        }
+    }
+}
+
+void vExercise4(void *pvParameters)
+{    
+    static char my_string[100]; // structure to store my text
+    static int my_string_width = 0;
+
+    while (1) {
+        if (DrawSignal) {
+            if (xSemaphoreTake(DrawSignal, portMAX_DELAY) == pdTRUE) {
+                xSemaphoreTake(ScreenLock, portMAX_DELAY);
+                
+                tumDrawClear(White); // Clear screen
+
+                // Format the string into the char array
+                sprintf(my_string, "This is exercise 4");
+                // Get the width of the string on the screen so we can center it
+                // Returns 0 if width was successfully obtained
+                if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
+                    tumDrawText(my_string,
+                                SCREEN_WIDTH / 2 - my_string_width / 2,
+                                SCREEN_HEIGHT / 2 - DEFAULT_FONT_SIZE / 2,
+                                TUMBlue);
+                xSemaphoreGive(ScreenLock);
+            }
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     /* Just leave all this stuff in here */
@@ -258,17 +314,32 @@ int main(int argc, char *argv[])
                     BufferSwap) != pdPASS) {
         goto err_bufferswap;
     }
-
-    if (xTaskCreate(vDemoTask, "DemoTask", mainGENERIC_STACK_SIZE * 2, NULL,
-                    mainGENERIC_PRIORITY, &DemoTask) != pdPASS) {
-        goto err_demotask;
+    if (xTaskCreate(vExercise2, "Exercise2", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise2) != pdPASS) {
+        goto err_exercise2;
     }
+    if (xTaskCreate(vExercise3, "Exercise3", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise3) != pdPASS) {
+        goto err_exercise3;
+    }
+    if (xTaskCreate(vExercise4, "Exercise4", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise4) != pdPASS) {
+        goto err_exercise4;
+    }
+
+    //vTaskSuspend(vExercise2);
+    vTaskSuspend(Exercise3);
+    vTaskSuspend(Exercise4);
 
     vTaskStartScheduler();
 
     return EXIT_SUCCESS;
 
-err_demotask:
+err_exercise4:
+    vTaskDelete(Exercise3);
+err_exercise3:
+    vTaskDelete(Exercise2);
+err_exercise2:
     vTaskDelete(BufferSwap);
 err_bufferswap:
     vSemaphoreDelete(ScreenLock);

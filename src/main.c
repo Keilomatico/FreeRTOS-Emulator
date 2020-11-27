@@ -24,8 +24,8 @@
 #define mainGENERIC_STACK_SIZE ((unsigned short)2560)
 
 #define ROTATION_RADIUS     100
-#define DEFAULT_RADIUS      30
-#define TRIANGLE_LENGTH     70
+#define MYCIRCLE_RADIUS     30
+#define TRIANGLE_WIDTH      70
 #define TRIANGLE_HEIGHT     60     
 #define SQUARE_LENGTH       60
 #define TEXT_OFFSET_Y       150
@@ -48,6 +48,58 @@ void xGetButtonInput(void)
 }
 
 #define KEYCODE(CHAR) SDL_SCANCODE_##CHAR
+
+/**
+ * @brief Calculates the coordinates for a square
+ *
+ * @param coordinates Points array to return the calculated points (must be at least of length 4)
+ * @param x X coordinate of the center of the square
+ * @param y Y coordinate of the center of the square
+ * @param length Length of each side of the square in pixels
+ * @return 0 on success
+ */
+int getSquareCorrdinates(coord_t *coordinates, int x, int y, int length)
+{
+    //Top left point
+    coordinates[0].x = x - length / 2;
+    coordinates[0].y = y - length / 2;
+    //Top right point
+    coordinates[1].x = x + length / 2;
+    coordinates[1].y = y - length / 2;
+    //Bottom right point
+    coordinates[2].x = x + length / 2;
+    coordinates[2].y = y + length / 2;
+    //Bottom left point
+    coordinates[3].x = x - length / 2;
+    coordinates[3].y = y + length / 2;
+
+    return 0;
+}
+
+/**
+ * @brief Calculates the coordinates for a triangle
+ *
+ * @param coordinates Points array to return the calculated points (must be at least of length 3)
+ * @param x X coordinate of the center of the square
+ * @param y Y coordinate of the center of the square
+ * @param width Length of the base side in pixels
+ * @param height Height of the triangle in pixels
+ * @return 0 on success
+ */
+int getTriangleCoordinates(coord_t *coordinates, int x, int y, int width, int height)
+{
+    //Left point
+    coordinates[0].x = x - width / 2;
+    coordinates[0].y = y + height / 2;
+    //Right point
+    coordinates[1].x = x + width / 2;
+    coordinates[1].y = y + height / 2;
+    //Top point
+    coordinates[2].x = x;
+    coordinates[2].y = y - height / 2;
+
+    return 0;
+}
 
 void vDemoTask(void *pvParameters)
 {
@@ -86,49 +138,32 @@ void vDemoTask(void *pvParameters)
 
         tumDrawClear(White); // Clear screen
 
-        //Calculate offset for moving parts
+        //Calculate offset for rotating parts
         offset_x = (int) (ROTATION_RADIUS * cos(i));
         offset_y = (int) (ROTATION_RADIUS * sin(i));
-        
-        tumDrawArc 	(   SCREEN_WIDTH / 2 - offset_x, 
+ 
+        //Draw the Circle 
+        //tumDrawArc is unsed instead of tumDrawCircle to create just the outline and not a filled circle
+        tumDrawArc(  SCREEN_WIDTH / 2 - offset_x, 
                         SCREEN_HEIGHT / 2 + offset_y,
-		                DEFAULT_RADIUS,
-		                0,
-		                359,
+		                MYCIRCLE_RADIUS,
+                        0,
+                        359,
 	                    Purple);
 
         //Create the points for the triangle
-        //Left point
-        mycoordinates[0].x = SCREEN_WIDTH / 2 - TRIANGLE_LENGTH / 2;
-        mycoordinates[0].y = SCREEN_HEIGHT / 2 + TRIANGLE_HEIGHT / 2;
-        //Right point
-        mycoordinates[1].x = SCREEN_WIDTH / 2 + TRIANGLE_LENGTH / 2;
-        mycoordinates[1].y = SCREEN_HEIGHT / 2 + TRIANGLE_HEIGHT / 2;
-        //Top point
-        mycoordinates[2].x = SCREEN_WIDTH / 2;
-        mycoordinates[2].y = SCREEN_HEIGHT / 2 - TRIANGLE_HEIGHT / 2;
+        getTriangleCoordinates(mycoordinates, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, TRIANGLE_WIDTH, TRIANGLE_HEIGHT);
 
         tumDrawPoly(mycoordinates, 3, Teal);  //Draw the triangle
 
 
         //Create the points for the square
-        //Top left point
-        mycoordinates[0].x = SCREEN_WIDTH / 2 - SQUARE_LENGTH / 2 + offset_x;
-        mycoordinates[0].y = SCREEN_HEIGHT / 2 - SQUARE_LENGTH / 2 - offset_y;
-        //Top right point
-        mycoordinates[1].x = SCREEN_WIDTH / 2 + SQUARE_LENGTH / 2 + offset_x;
-        mycoordinates[1].y = SCREEN_HEIGHT / 2 - SQUARE_LENGTH / 2 - offset_y;
-        //Bottom right point
-        mycoordinates[2].x = SCREEN_WIDTH / 2 + SQUARE_LENGTH / 2 + offset_x;
-        mycoordinates[2].y = SCREEN_HEIGHT / 2 + SQUARE_LENGTH / 2 - offset_y;
-        //Bottom left point
-        mycoordinates[3].x = SCREEN_WIDTH / 2 - SQUARE_LENGTH / 2 + offset_x;
-        mycoordinates[3].y = SCREEN_HEIGHT / 2 + SQUARE_LENGTH / 2 - offset_y;
+        getSquareCorrdinates(mycoordinates, SCREEN_WIDTH / 2 + offset_x, SCREEN_HEIGHT / 2 - offset_y, SQUARE_LENGTH);
 
         tumDrawPoly(mycoordinates, 4, Fuchsia);  //Draw the sqare
 
         // Format the string into the char array
-        sprintf(my_string, "Hello World");
+        sprintf(my_string, "Hello ESPL");
         // Get the width of the string on the screen so we can center it
         // Returns 0 if width was successfully obtained
         if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
@@ -136,10 +171,23 @@ void vDemoTask(void *pvParameters)
                         SCREEN_WIDTH / 2 - my_string_width / 2,
                         SCREEN_HEIGHT / 2 - DEFAULT_FONT_SIZE / 2 + TEXT_OFFSET_Y,
                         TUMBlue);
+        
+        
+        sprintf(my_string, "This is exercise 2.1");
+        // Get the width of the string on the screen so it can be centered
+        if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
+        {
+            //Calculate the offset for the text (offset_x is reused here)
+            offset_x = (int) (offset_x * (SCREEN_WIDTH / 2 - my_string_width / 2) / ROTATION_RADIUS); 
+            tumDrawText(my_string,
+                        SCREEN_WIDTH / 2 - my_string_width / 2 + offset_x,
+                        SCREEN_HEIGHT / 2 - DEFAULT_FONT_SIZE / 2 - TEXT_OFFSET_Y,
+                        TUMBlue);
+        }
 
         tumDrawUpdateScreen(); // Refresh the screen to draw string
 
-        if(i >= 6.283)
+        if(i >= 2*M_PI)
             i=0;
         else
             i += 0.02;

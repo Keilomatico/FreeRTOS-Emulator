@@ -23,6 +23,11 @@
 #define mainGENERIC_PRIORITY (tskIDLE_PRIORITY)
 #define mainGENERIC_STACK_SIZE ((unsigned short)2560)
 
+
+#define DEBOUNCE_DELAY 300
+
+#define KEYCODE(CHAR) SDL_SCANCODE_##CHAR
+
 #define ROTATION_RADIUS     100
 #define MYCIRCLE_RADIUS     30
 #define TRIANGLE_WIDTH      70
@@ -127,6 +132,39 @@ void vSwapBuffers(void *pvParameters)
     }
 }
 
+#define INDEX_A    0
+#define INDEX_B    1
+#define INDEX_C    2
+#define INDEX_D    3
+
+/**
+ * @brief Checks if a specific button has been pressed and handles debouncing
+ *
+ * @param last_change Pointer to a variable which stores the timestamp for the last change
+ * @param Keycode SDL_Scancode of the Key
+ * @return 1 if the button has been pressed, 0 if not or if the Semaphore couldn't have been taken
+ */
+int checkbutton(TickType_t *last_change, int keycode)
+{
+    TickType_t current_tick;
+    static int ret;
+
+    if (xSemaphoreTake(buttons.lock, 0) == pdTRUE) {
+        current_tick = xTaskGetTickCount();
+        if (buttons.buttons[keycode] > 0 && current_tick - *last_change > DEBOUNCE_DELAY) {
+            *last_change = current_tick;
+            buttons.buttons[keycode] = 0;
+            ret = 1;
+        }
+        else
+            ret = 0;
+        xSemaphoreGive(buttons.lock);
+    }
+    else
+        ret = 0;
+    return ret;   
+}
+
 void vExercise2(void *pvParameters)
 {
     static char my_string[100]; // structure to store my text
@@ -135,6 +173,9 @@ void vExercise2(void *pvParameters)
     static float i=0;
     static int offset_x;
     static int offset_y;
+    static int counter[4] = { 0 };
+    TickType_t last_change[4] = { 0 };
+    
 
     while (1) {
         if (DrawSignal) {
@@ -153,9 +194,21 @@ void vExercise2(void *pvParameters)
                     xSemaphoreGive(buttons.lock);
                 }
 
+                counter[INDEX_A] += checkbutton(&last_change[INDEX_A], KEYCODE(A));
+                counter[INDEX_B] += checkbutton(&last_change[INDEX_B], KEYCODE(B));
+                counter[INDEX_C] += checkbutton(&last_change[INDEX_C], KEYCODE(C));
+                counter[INDEX_D] += checkbutton(&last_change[INDEX_D], KEYCODE(D));
+
                 xSemaphoreTake(ScreenLock, portMAX_DELAY);
                 
                 tumDrawClear(White); // Clear screen
+
+                sprintf(my_string, "A: %d | B: %d | C: %d | D: %d", 
+                    counter[INDEX_A], counter[INDEX_B], counter[INDEX_C], counter[INDEX_D]);
+                tumDrawText(my_string,
+                                20,
+                                20,
+                                Black);
 
                 //Calculate offset for rotating parts
                 offset_x = (int) (ROTATION_RADIUS * cos(i));

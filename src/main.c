@@ -33,14 +33,15 @@
 #define INDEX_C    2
 #define INDEX_D    3
 
-#define ROTATION_RADIUS     100
-#define MYCIRCLE_RADIUS     30
-#define TRIANGLE_WIDTH      70
-#define TRIANGLE_HEIGHT     60     
-#define SQUARE_LENGTH       60
-#define TEXT_OFFSET_Y       150
-#define BUTTON_TEXT_POS_X   20
-#define BUTTON_TEXT_POS_Y   30
+#define ROTATION_RADIUS         100
+#define MYCIRCLE_RADIUS         30
+#define TRIANGLE_WIDTH          70
+#define TRIANGLE_HEIGHT         60     
+#define SQUARE_LENGTH           60
+#define TEXT_OFFSET_Y           150
+#define BUTTON_TEXT_POS_X       20
+#define BUTTON_TEXT_POS_Y       30
+#define MOUSE_OFFSET_DEVIDER    10
 
 static TaskHandle_t Exercise2 = NULL; //Init with NULL, so you can check if it has been initialized
 static TaskHandle_t Exercise3 = NULL;
@@ -212,6 +213,9 @@ void vExercise2(void *pvParameters)
                 xSemaphoreTake(ScreenLock, portMAX_DELAY);
                 
                 tumDrawClear(White); // Clear screen
+
+                tumDrawSetGlobalXOffset(tumEventGetMouseX()/MOUSE_OFFSET_DEVIDER);
+                tumDrawSetGlobalYOffset(tumEventGetMouseY()/MOUSE_OFFSET_DEVIDER);
 
                 sprintf(my_string, "A: %d | B: %d | C: %d | D: %d", 
                     counter[INDEX_A], counter[INDEX_B], counter[INDEX_C], counter[INDEX_D]);

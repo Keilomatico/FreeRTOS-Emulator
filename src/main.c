@@ -28,12 +28,19 @@
 
 #define KEYCODE(CHAR) SDL_SCANCODE_##CHAR
 
+#define INDEX_A    0
+#define INDEX_B    1
+#define INDEX_C    2
+#define INDEX_D    3
+
 #define ROTATION_RADIUS     100
 #define MYCIRCLE_RADIUS     30
 #define TRIANGLE_WIDTH      70
 #define TRIANGLE_HEIGHT     60     
 #define SQUARE_LENGTH       60
 #define TEXT_OFFSET_Y       150
+#define BUTTON_TEXT_POS_X   20
+#define BUTTON_TEXT_POS_Y   30
 
 static TaskHandle_t Exercise2 = NULL; //Init with NULL, so you can check if it has been initialized
 static TaskHandle_t Exercise3 = NULL;
@@ -132,11 +139,6 @@ void vSwapBuffers(void *pvParameters)
     }
 }
 
-#define INDEX_A    0
-#define INDEX_B    1
-#define INDEX_C    2
-#define INDEX_D    3
-
 /**
  * @brief Checks if a specific button has been pressed and handles debouncing
  *
@@ -194,6 +196,14 @@ void vExercise2(void *pvParameters)
                     xSemaphoreGive(buttons.lock);
                 }
 
+                if(tumEventGetMouseMiddle())
+                {
+                    counter[INDEX_A] = 0;
+                    counter[INDEX_B] = 0;
+                    counter[INDEX_C] = 0;
+                    counter[INDEX_D] = 0;
+                }
+
                 counter[INDEX_A] += checkbutton(&last_change[INDEX_A], KEYCODE(A));
                 counter[INDEX_B] += checkbutton(&last_change[INDEX_B], KEYCODE(B));
                 counter[INDEX_C] += checkbutton(&last_change[INDEX_C], KEYCODE(C));
@@ -206,8 +216,15 @@ void vExercise2(void *pvParameters)
                 sprintf(my_string, "A: %d | B: %d | C: %d | D: %d", 
                     counter[INDEX_A], counter[INDEX_B], counter[INDEX_C], counter[INDEX_D]);
                 tumDrawText(my_string,
+                                BUTTON_TEXT_POS_X,
+                                BUTTON_TEXT_POS_Y,
+                                Black);
+
+                sprintf(my_string, "Mouse position: X: %d | Y: %d", 
+                    tumEventGetMouseX(), tumEventGetMouseX()); 
+                    tumDrawText(my_string,
                                 20,
-                                20,
+                                10,
                                 Black);
 
                 //Calculate offset for rotating parts

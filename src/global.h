@@ -78,9 +78,4 @@ extern SemaphoreHandle_t DrawSignal;
 extern SemaphoreHandle_t ScreenLock;
 extern buttons_buffer_t buttons;
 
-extern state_parameters_t state_param_ex2;
-extern state_parameters_t state_param_ex3;
-extern state_parameters_t state_param_ex4;
-
-
 #endif

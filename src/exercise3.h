@@ -10,6 +10,10 @@
 #include "global.h"
 #include "miscFunc.h"
 
+void exercise3run(void *data);
+
+void exercise3exit(void *data);
+
 void vExercise3(void *pvParameters);
 
 #endif

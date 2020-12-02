@@ -16,6 +16,7 @@
 #include "task.h"
 
 #include "global.h"
+#include "miscFunc.h"
 
 //Maximum number of states which can be added to the statemachine
 #define MAX_NUMBER_OF_STATES 10

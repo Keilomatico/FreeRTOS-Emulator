@@ -1,5 +1,17 @@
 #include "exercise3.h"
 
+void exercise3run(void *data)
+{
+    printf("Resuming task 3 \n");
+    vTaskResume(Exercise3);
+}
+
+void exercise3exit(void *data)
+{
+    printf("Suspending task 3 \n");
+    vTaskSuspend(Exercise3);
+}
+
 void vExercise3(void *pvParameters)
 {    
     static char my_string[100]; // structure to store my text
@@ -24,5 +36,6 @@ void vExercise3(void *pvParameters)
                 xSemaphoreGive(ScreenLock);
             }
         }
+        vTaskDelay(10);
     }
 }

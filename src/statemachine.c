@@ -9,7 +9,6 @@ struct state_machine {
 	unsigned int _state_count;	//Total number of states
 
 	state_parameters_t *current;	//Pointer to the currently active state
-	state_parameters_t *next;		//Pointer to the next state
 } sm = { 0 };	//All values are initialized with 0
 
 //Queue which contains the IDs of each state
@@ -97,9 +96,10 @@ void deleteState(unsigned int ID)
 
 void vStatesHandler(void *pvParameters)
 {
-	unsigned char state_in;
+	unsigned char state_in = 0;
 
 	TickType_t prev_wake_time;
+	TickType_t last_change = 0;
 
     printf("StatesHandler started \n");
 
@@ -115,25 +115,35 @@ void vStatesHandler(void *pvParameters)
     (sm.current->enter)(sm.current->data);
 
 	while (1) {
-		/*if (xQueueReceive(state_queue, &state_in, 0) == pdTRUE)
-			sm.next = findState(state_in);
-
-		//If the state was changed
-		//Call the exit function of the current task and the enter function
-        // of the next task if they exist
-		if (sm.current != sm.next) {
+		xGetButtonInput(); // Update global input
+		if(checkbutton(&last_change, KEYCODE(E))) {
+			printf("Button E pressed \n");
+			//Call the exit function of the current task if it exists
 			if (sm.current->exit)
 				(sm.current->exit)(sm.current->data);
 
-			if (sm.next->enter)
-				(sm.next->enter)(sm.next->data);
+			if(state_in >= sm._state_count - 1)
+			{
+				state_in = 0;
+				sm.current = sm.head;
+			}
+			else
+			{
+				state_in++;
+				sm.current = sm.current->next;
+			}
+			
 
-			sm.current = sm.next;	//Make the next task the current task
+			if (sm.current->enter)
+				(sm.current->enter)(sm.current->data);
+			
+			//Call the run function of the (new) current task
+			if (sm.current->run)
+				(sm.current->run)(sm.current->data);
 		}
-		//Call the run function of the (new) current task
-        */
-		if (sm.current->run)
-			(sm.current->run)(sm.current->data);
+		/*if (xQueueReceive(state_queue, &state_in, 0) == pdTRUE)
+			sm.next = findState(state_in);
+		*/
 
 		vTaskDelayUntil(&prev_wake_time, STATE_MACHINE_INTERVAL);
 	}

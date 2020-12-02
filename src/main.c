@@ -18,9 +18,9 @@ SemaphoreHandle_t DrawSignal  = NULL;
 SemaphoreHandle_t ScreenLock = NULL;
 buttons_buffer_t buttons = { 0 };
 
-state_parameters_t state_param_ex2 = { 0 };
-state_parameters_t state_param_ex3 = { 0 };
-state_parameters_t state_param_ex4 = { 0 };
+static state_parameters_t state_param_ex2 = { 0 };
+static state_parameters_t state_param_ex3 = { 0 };
+static state_parameters_t state_param_ex4 = { 0 };
 
 void vSwapBuffers(void *pvParameters)
 {
@@ -80,14 +80,7 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create screen lock");
         goto err_screen_lock;
     }
-    state_param_ex2.lock = xSemaphoreCreateMutex();
-    if (!state_param_ex2.lock) {
-        PRINT_ERROR("Failed to create state_param_ex2 lock");
-        goto err_state_param_ex2_lock;
-    }
-    printf("Created state for Exercise 2 with ID %d. \n",
-        initState(&state_param_ex2, NULL, exercise2run, NULL, exercise2exit, NULL));
-
+    
     if (xTaskCreate(vSwapBuffers, "BufferSwapTask",
                     mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES,
                     BufferSwap) != pdPASS) {
@@ -114,6 +107,14 @@ int main(int argc, char *argv[])
     vTaskSuspend(Exercise3);
     vTaskSuspend(Exercise4);
 
+    printf("Created state for Exercise 2 with ID %d. \n",
+        initState(&state_param_ex2, NULL, exercise2run, NULL, exercise2exit, NULL));
+    printf("Created state for Exercise 3 with ID %d. \n",
+        initState(&state_param_ex3, NULL, exercise3run, NULL, exercise3exit, NULL));
+    printf("Created state for Exercise 4 with ID %d. \n",
+        initState(&state_param_ex4, NULL, exercise4run, NULL, exercise4exit, NULL));
+
+
     vTaskStartScheduler();
 
     return EXIT_SUCCESS;
@@ -127,8 +128,6 @@ err_exercise3:
 err_exercise2:
     vTaskDelete(BufferSwap);
 err_bufferswap:
-    vSemaphoreDelete(state_param_ex2.lock);
-err_state_param_ex2_lock:
     vSemaphoreDelete(ScreenLock);
 err_screen_lock:
     vSemaphoreDelete(DrawSignal);

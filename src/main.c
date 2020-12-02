@@ -8,14 +8,19 @@
 #define mainGENERIC_PRIORITY (tskIDLE_PRIORITY)
 #define mainGENERIC_STACK_SIZE ((unsigned short)2560)
 
-static TaskHandle_t Exercise2 = NULL; //Init with NULL, so you can check if it has been initialized
-static TaskHandle_t Exercise3 = NULL;
-static TaskHandle_t Exercise4 = NULL;
-static TaskHandle_t BufferSwap = NULL;
+TaskHandle_t Exercise2 = NULL; //Init with NULL, so you can check if it has been initialized
+TaskHandle_t Exercise3 = NULL;
+TaskHandle_t Exercise4 = NULL;
+TaskHandle_t BufferSwap = NULL;
+TaskHandle_t StatesHandler = NULL;
 
 SemaphoreHandle_t DrawSignal  = NULL;
 SemaphoreHandle_t ScreenLock = NULL;
 buttons_buffer_t buttons = { 0 };
+
+state_parameters_t state_param_ex2 = { 0 };
+state_parameters_t state_param_ex3 = { 0 };
+state_parameters_t state_param_ex4 = { 0 };
 
 void vSwapBuffers(void *pvParameters)
 {
@@ -65,7 +70,6 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create buttons lock");
         goto err_buttons_lock;
     }
-
     DrawSignal = xSemaphoreCreateBinary(); // Screen buffer locking
     if (!DrawSignal) {
         PRINT_ERROR("Failed to create draw signal");
@@ -76,6 +80,13 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create screen lock");
         goto err_screen_lock;
     }
+    state_param_ex2.lock = xSemaphoreCreateMutex();
+    if (!state_param_ex2.lock) {
+        PRINT_ERROR("Failed to create state_param_ex2 lock");
+        goto err_state_param_ex2_lock;
+    }
+    printf("Created state for Exercise 2 with ID %d. \n",
+        initState(&state_param_ex2, NULL, exercise2run, NULL, exercise2exit, NULL));
 
     if (xTaskCreate(vSwapBuffers, "BufferSwapTask",
                     mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES,
@@ -94,8 +105,12 @@ int main(int argc, char *argv[])
                     mainGENERIC_PRIORITY, &Exercise4) != pdPASS) {
         goto err_exercise4;
     }
+    if (xTaskCreate(vStatesHandler, "StatesHandler", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &StatesHandler) != pdPASS) {
+        goto err_statesHandler;
+    }
 
-    //vTaskSuspend(vExercise2);
+    vTaskSuspend(Exercise2);
     vTaskSuspend(Exercise3);
     vTaskSuspend(Exercise4);
 
@@ -103,6 +118,8 @@ int main(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 
+err_statesHandler:
+    vTaskDelete(Exercise4);
 err_exercise4:
     vTaskDelete(Exercise3);
 err_exercise3:
@@ -110,6 +127,8 @@ err_exercise3:
 err_exercise2:
     vTaskDelete(BufferSwap);
 err_bufferswap:
+    vSemaphoreDelete(state_param_ex2.lock);
+err_state_param_ex2_lock:
     vSemaphoreDelete(ScreenLock);
 err_screen_lock:
     vSemaphoreDelete(DrawSignal);
@@ -123,6 +142,8 @@ err_init_events:
     tumDrawExit();
 err_init_drawing:
     return EXIT_FAILURE;
+
+    vSemaphoreDelete(state_param_ex2.lock);
 }
 
 // cppcheck-suppress unusedFunction

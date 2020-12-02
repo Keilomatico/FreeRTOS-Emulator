@@ -1,5 +1,18 @@
 #include "exercise2.h"
 
+void exercise2run(void *data)
+{
+    printf("Resuming task 2 \n");
+    vTaskResume(Exercise2);
+}
+
+void exercise2exit(void *data)
+{
+    printf("Suspending task 2 \n");
+    vTaskSuspend(Exercise2);
+}
+
+
 void vExercise2(void *pvParameters)
 {
     static char my_string[100]; // structure to store my text

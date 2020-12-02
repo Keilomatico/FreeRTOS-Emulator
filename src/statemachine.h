@@ -17,30 +17,10 @@
 
 #include "global.h"
 
-#define STATE_MACHINE_STATE_QUEUE_LENGTH 10
+//Maximum number of states which can be added to the statemachine
+#define MAX_NUMBER_OF_STATES 10
+//After this number of ticks the state machine is wakened again
 #define STATE_MACHINE_INTERVAL 10
-
-/**
- * @brief Stores data for each individual system state
- */
-typedef struct state_parameters {
-	unsigned int _ID;	//ID of the state
-
-	void *data;		//Pointer to the data of the state
-
-	void (*init)(void *);	//Pointer to the init function of the state
-	void (*enter)(void *);	//Pointer to the enter function of the state
-	void (*run)(void *);	//Pointer to the run function of the state
-	void (*exit)(void *);	//Pointer to the exit function of the state
-
-	//Pointer to the struct of the next state
-	struct state_parameters *next;
-
-	//Bitfield of length one (equivalent to a boolean in usage but more storage efficient)
-	//Indicates if the state has been inititalized yet
-	//See https://docs.microsoft.com/en-us/cpp/c-language/c-bit-fields
-	unsigned char _initialized : 1;
-} state_parameters_t;
 
 /**
  * @brief Contains the data for the whole statemachine 
@@ -49,7 +29,7 @@ typedef struct state_parameters {
 struct state_machine;
 
 /**
- * @brief Adds a state to the statemachine
+ * @brief Initializes a state with all its parameters
  *
  * @param init Function pointer to the init function
  * @param enter Function pointer to the enter function
@@ -58,7 +38,7 @@ struct state_machine;
  * @param data Data for the state
  * @return New state ID
  */
-unsigned int addState(void (*init)(void *), void (*enter)(void *),
+unsigned int initState(state_parameters_t *state_params, void (*init)(void *), void (*enter)(void *),
 		      void (*run)(void *), void (*exit)(void *), void *data);
 
 /**
@@ -85,6 +65,6 @@ unsigned char smInit(void);
 /**
  * @brief Task which handles switching between states
  */
-void statesHandlerTask(void);
+void vStatesHandler(void *pvParameter);
 
 #endif

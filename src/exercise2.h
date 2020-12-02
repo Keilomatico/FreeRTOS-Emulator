@@ -25,6 +25,10 @@
 #define BUTTON_TEXT_POS_Y       30
 #define MOUSE_OFFSET_DEVIDER    10
 
+void exercise2run(void *data);
+
+void exercise2exit(void *data);
+
 void vExercise2(void *pvParameters);
 
 #endif

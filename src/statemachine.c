@@ -2,45 +2,53 @@
 
 // ########### NOTES ############
 // This statemachine follows the idea of a linked list
-// Difference between malloc and calloc:
-// https://www.geeksforgeeks.org/difference-between-malloc-and-calloc-with-examples/ 
 
 struct state_machine {
-	state_parameters_t head;	//Struct for the first state
+	state_parameters_t *head;	//Pointer to the first state
 
 	unsigned int _state_count;	//Total number of states
 
 	state_parameters_t *current;	//Pointer to the currently active state
 	state_parameters_t *next;		//Pointer to the next state
-
-	unsigned char _initialized : 1;
 } sm = { 0 };	//All values are initialized with 0
 
-//Create the handle for the statequeue
-//This queue will later contain the IDs of each state
+//Queue which contains the IDs of each state
 QueueHandle_t state_queue = NULL;
 
-unsigned int addState(void (*init)(void *), void (*enter)(void *),
+unsigned int initState(state_parameters_t *state_params, void (*init)(void *), void (*enter)(void *),
 		      void (*run)(void *), void (*exit)(void *), void *data)
 {
-	state_parameters_t *iterator;
+    printf("Starting initState \n");
+    state_parameters_t *iterator;
 
-	//Go through all states until you reach the end of the list (iterator->next==0)
-    // (0 because we use calloc instead of malloc)
-	for (iterator = &sm.head; iterator->next; iterator = iterator->next);
+    state_params->init = init;
+    state_params->enter = enter;
+    state_params->run = run;
+    state_params->exit = exit;
+    state_params->data = data;
 
-	iterator->next = (state_parameters_t *)calloc(1, sizeof(state_parameters_t));
-	iterator->next->init = init;
-	iterator->next->enter = enter;
-	iterator->next->run = run;
-	iterator->next->exit = exit;
-	iterator->next->data = data;
+    if(!sm.head) {
+        printf("sm.head points to Null; Inititalizing it with the current state. \n");
+        sm.head = state_params;
+        sm.current = sm.head;
+    }
+    else {
+        //Go through all states until you reach the end of the list (iterator->next==0)
+	    for (iterator = sm.head; iterator->next; iterator = iterator->next);
+        iterator->next = state_params;
+    }
 
-	//Return the new state ID
-	//Could be also written like so:
-	//sm._state_count += 1;
-	//return (iterator->_ID = sm._state_count);
-	return (iterator->_ID = ++sm._state_count);
+
+    if (state_params->init)	//Check if the current state has an init function. If yes, call it
+        //Remember: Init is a function pointer, so this is just calling the 
+        //init function with the data as an argument
+        (state_params->init)(state_params->data);
+
+	//Calculate and return the state ID
+    state_params->_ID = sm._state_count;
+    sm._state_count++;
+    printf("Finished initState \n");
+    return (state_params->_ID);
 }
 
 state_parameters_t *findState(unsigned int ID)
@@ -49,7 +57,7 @@ state_parameters_t *findState(unsigned int ID)
 
 	//Go through all states until you either reach the end (terator->next == NULL) 
     //or find the ID (iterator->next->_ID == ID)
-	for (iterator = &sm.head; iterator->next && (iterator->next->_ID != ID);
+	for (iterator = sm.head; iterator->next && (iterator->next->_ID != ID);
 	     iterator = iterator->next)
 		;
 
@@ -61,7 +69,7 @@ void deleteState(unsigned int ID)
 	state_parameters_t *iterator, *delete;
 
 	//Same as in findState (I wonder why findState is not simply called here)
-	for (iterator = &sm.head; iterator->next && (iterator->next->_ID != ID);
+	for (iterator = sm.head; iterator->next && (iterator->next->_ID != ID);
 	     iterator = iterator->next)
 		;
 
@@ -83,16 +91,20 @@ void deleteState(unsigned int ID)
 			else
 				iterator->next = delete->next;
 
-			free(delete);
+			//free(delete);
 		}
 }
 
-unsigned char smInit(void)
+void vStatesHandler(void *pvParameters)
 {
-	state_parameters_t *iterator;
+	unsigned char state_in;
 
-	//Create the queue which can hold all the state IDs
-	state_queue = xQueueCreate(STATE_MACHINE_STATE_QUEUE_LENGTH,
+	TickType_t prev_wake_time;
+
+    printf("StatesHandler started \n");
+
+    //Create the queue which can hold all the state IDs
+	state_queue = xQueueCreate(MAX_NUMBER_OF_STATES,
 				   sizeof(unsigned int));
 
 	if (!state_queue) {
@@ -100,36 +112,10 @@ unsigned char smInit(void)
 		exit(EXIT_FAILURE);
 	}
 
-    //Go through the whole linked list
-	for (iterator = &sm.head; iterator->next; iterator = iterator->next)	
-		if (iterator->init)	//Check if the current state has an init function
-			//Remember: Init is a function pointer, so this is just calling the 
-            //init function with the data as an argument
-            (iterator->init)(iterator->data);
-
-	return 0;
-}
-
-void statesHandlerTask(void)
-{
-	unsigned char state_in;
-
-	TickType_t prev_wake_time;
-
-	//equiv. to
-	//if(!sm.initialized) {
-	//	sm.initialized++ (which just means sm.initialized=1;)
-	if (!(sm._initialized++)) {
-        smInit();
-        //Assign the value of sm.head.next to sm.next and sm.current and checks if sm.head.next == 0
-		if (!(sm.current = sm.next = sm.head.next)) {
-			fprintf(stderr, "No states\n");
-			exit(EXIT_FAILURE);
-		}
-    }
+    (sm.current->enter)(sm.current->data);
 
 	while (1) {
-		if (xQueueReceive(state_queue, &state_in, 0) == pdTRUE)
+		/*if (xQueueReceive(state_queue, &state_in, 0) == pdTRUE)
 			sm.next = findState(state_in);
 
 		//If the state was changed
@@ -145,6 +131,7 @@ void statesHandlerTask(void)
 			sm.current = sm.next;	//Make the next task the current task
 		}
 		//Call the run function of the (new) current task
+        */
 		if (sm.current->run)
 			(sm.current->run)(sm.current->data);
 

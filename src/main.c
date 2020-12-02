@@ -214,9 +214,11 @@ void vExercise2(void *pvParameters)
                 
                 tumDrawClear(White); // Clear screen
 
+                //Move the entire screen with the mouse
                 tumDrawSetGlobalXOffset(tumEventGetMouseX()/MOUSE_OFFSET_DEVIDER);
                 tumDrawSetGlobalYOffset(tumEventGetMouseY()/MOUSE_OFFSET_DEVIDER);
 
+                //Display the mouse coordinates
                 sprintf(my_string, "A: %d | B: %d | C: %d | D: %d", 
                     counter[INDEX_A], counter[INDEX_B], counter[INDEX_C], counter[INDEX_D]);
                 tumDrawText(my_string,
@@ -236,7 +238,8 @@ void vExercise2(void *pvParameters)
                 offset_y = (int) (ROTATION_RADIUS * sin(i));
         
                 //Draw the Circle
-                //tumDrawArc is unsed instead of tumDrawCircle to create just the outline and not a filled circle
+                //tumDrawArc is unsed instead of tumDrawCircle to create 
+                //just the outline and not a filled circle
                 tumDrawArc(  SCREEN_WIDTH / 2 - offset_x, 
                                 SCREEN_HEIGHT / 2 + offset_y,
                                 MYCIRCLE_RADIUS,
@@ -245,13 +248,15 @@ void vExercise2(void *pvParameters)
                                 Purple);
 
                 //Create the points for the triangle
-                getTriangleCoordinates(mycoordinates, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, TRIANGLE_WIDTH, TRIANGLE_HEIGHT);
+                getTriangleCoordinates(mycoordinates, SCREEN_WIDTH / 2, 
+                SCREEN_HEIGHT / 2, TRIANGLE_WIDTH, TRIANGLE_HEIGHT);
 
                 tumDrawPoly(mycoordinates, 3, Teal);  //Draw the triangle
 
 
                 //Create the points for the square
-                getSquareCorrdinates(mycoordinates, SCREEN_WIDTH / 2 + offset_x, SCREEN_HEIGHT / 2 - offset_y, SQUARE_LENGTH);
+                getSquareCorrdinates(mycoordinates, SCREEN_WIDTH / 2 + offset_x, 
+                SCREEN_HEIGHT / 2 - offset_y, SQUARE_LENGTH);
 
                 tumDrawPoly(mycoordinates, 4, Fuchsia);  //Draw the sqare
 
@@ -266,12 +271,13 @@ void vExercise2(void *pvParameters)
                                 TUMBlue);
                 
                 
+                //Same as above
                 sprintf(my_string, "This is exercise 2.1");
-                // Get the width of the string on the screen so it can be centered
                 if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
                 {
                     //Calculate the offset for the text (offset_x is reused here)
-                    offset_x = (int) (offset_x * (SCREEN_WIDTH / 2 - my_string_width / 2) / ROTATION_RADIUS); 
+                    offset_x = (int) (offset_x * (SCREEN_WIDTH / 2 - my_string_width / 2)
+                     / ROTATION_RADIUS); 
                     tumDrawText(my_string,
                                 SCREEN_WIDTH / 2 - my_string_width / 2 + offset_x,
                                 SCREEN_HEIGHT / 2 - DEFAULT_FONT_SIZE / 2 - TEXT_OFFSET_Y,

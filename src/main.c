@@ -8,7 +8,8 @@
 #define mainGENERIC_PRIORITY (tskIDLE_PRIORITY)
 #define mainGENERIC_STACK_SIZE ((unsigned short)2560)
 
-TaskHandle_t Exercise2 = NULL; //Init with NULL, so you can check if it has been initialized
+//Init with NULL, so you can check if it has been initialized
+TaskHandle_t Exercise2 = NULL; 
 TaskHandle_t Exercise3 = NULL;
 TaskHandle_t Exercise4 = NULL;
 TaskHandle_t BufferSwap = NULL;
@@ -17,6 +18,8 @@ TaskHandle_t StatesHandler = NULL;
 SemaphoreHandle_t DrawSignal  = NULL;
 SemaphoreHandle_t ScreenLock = NULL;
 SemaphoreHandle_t exercise2Sem = NULL;
+SemaphoreHandle_t exercise3Sem = NULL;
+SemaphoreHandle_t exercise4Sem = NULL;
 buttons_buffer_t buttons = { 0 };
 
 //Do I need to lock these?
@@ -46,12 +49,12 @@ void vSwapBuffers(void *pvParameters)
 
 int main(int argc, char *argv[])
 {
-    /* Just leave all this stuff in here */
+    /* Just leave all this stuff in here and don't think about it */
     char *bin_folder_path = tumUtilGetBinFolderPath(argv[0]); //Required for images
 
     printf("Initializing: ");
 
-    /* Initialization (mostly of the mutexes) */
+    /* Initialization (mostly of the semaphores/mutexes) */
     if (tumDrawInit(bin_folder_path)) {
         PRINT_ERROR("Failed to initialize drawing");
         goto err_init_drawing;
@@ -87,6 +90,16 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create exercise2 semaphore");
         goto err_ex2_sem;
     }
+    exercise3Sem = xSemaphoreCreateBinary();
+    if (!exercise3Sem) {
+        PRINT_ERROR("Failed to create exercise3 semaphore");
+        goto err_ex3_sem;
+    }
+    exercise4Sem = xSemaphoreCreateBinary();
+    if (!exercise4Sem) {
+        PRINT_ERROR("Failed to create exercise4 semaphore");
+        goto err_ex4_sem;
+    }
     
     if (xTaskCreate(vSwapBuffers, "BufferSwapTask",
                     mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES,
@@ -110,7 +123,7 @@ int main(int argc, char *argv[])
         goto err_statesHandler;
     }
 
-    //vTaskSuspend(Exercise2);
+    vTaskSuspend(Exercise2);
     vTaskSuspend(Exercise3);
     vTaskSuspend(Exercise4);
 
@@ -121,7 +134,21 @@ int main(int argc, char *argv[])
     printf("Created state for Exercise 4 with ID %d. \n",
         initState(&state_param_ex4, NULL, exercise4run, NULL, exercise4exit, NULL));
 
+    /*//Example on how to delete states and what's happening with them
+    state_parameters_t *test;
+    test = findState(1);
+    printf("test has ID %d (should be 1)\n", test->_ID);
 
+    printf("Deleting state 1 \n");
+    deleteState(1);
+
+    test = findState(1);
+    if(!test)
+        printf("State 1 successfully deleted \n");
+    
+    printf("Created state for Exercise 3 with ID %d. \n",
+        initState(&state_param_ex3, NULL, exercise3run, NULL, exercise3exit, NULL));
+    */
     vTaskStartScheduler();
 
     return EXIT_SUCCESS;
@@ -135,6 +162,10 @@ err_exercise3:
 err_exercise2:
     vTaskDelete(BufferSwap);
 err_bufferswap:
+    vSemaphoreDelete(exercise4Sem);
+err_ex4_sem:
+    vSemaphoreDelete(exercise3Sem);
+err_ex3_sem:
     vSemaphoreDelete(exercise2Sem);
 err_ex2_sem:
     vSemaphoreDelete(ScreenLock);

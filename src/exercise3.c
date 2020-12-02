@@ -3,12 +3,14 @@
 void exercise3run(void *data)
 {
     printf("Resuming task 3 \n");
+    xSemaphoreGive(exercise3Sem);
     vTaskResume(Exercise3);
 }
 
 void exercise3exit(void *data)
 {
     printf("Suspending task 3 \n");
+    xSemaphoreTake(exercise3Sem, portMAX_DELAY);
     vTaskSuspend(Exercise3);
 }
 
@@ -18,6 +20,7 @@ void vExercise3(void *pvParameters)
     static int my_string_width = 0;
 
     while (1) {
+        xSemaphoreTake(exercise3Sem, portMAX_DELAY);
         if (DrawSignal) {
             if (xSemaphoreTake(DrawSignal, portMAX_DELAY) == pdTRUE) {
                 xSemaphoreTake(ScreenLock, portMAX_DELAY);
@@ -37,5 +40,6 @@ void vExercise3(void *pvParameters)
             }
         }
         vTaskDelay(10);
+        xSemaphoreGive(exercise3Sem);
     }
 }

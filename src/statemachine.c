@@ -11,14 +11,13 @@ struct state_machine {
 	state_parameters_t *current;	//Pointer to the currently active state
 } sm = { 0 };	//All values are initialized with 0
 
-//Queue which contains the IDs of each state
-QueueHandle_t state_queue = NULL;
-
 unsigned int initState(state_parameters_t *state_params, void (*init)(void *), void (*enter)(void *),
 		      void (*run)(void *), void (*exit)(void *), void *data)
 {
-    printf("Starting initState \n");
     state_parameters_t *iterator;
+	int max_ID = 0;
+
+	state_params->next = NULL;
 
     state_params->init = init;
     state_params->enter = enter;
@@ -30,23 +29,32 @@ unsigned int initState(state_parameters_t *state_params, void (*init)(void *), v
         printf("sm.head points to Null; Inititalizing it with the current state. \n");
         sm.head = state_params;
         sm.current = sm.head;
+		state_params->_ID = 0;
     }
     else {
         //Go through all states until you reach the end of the list (iterator->next==0)
-	    for (iterator = sm.head; iterator->next; iterator = iterator->next);
+		//While iterating through this list also find the state with the largest ID
+	    for (iterator = sm.head; iterator->next; iterator = iterator->next) {
+			if(iterator->_ID > max_ID) {
+				max_ID = iterator->_ID;
+			}
+		}
+		//Don't forget to check the last item
+		if(iterator->_ID > max_ID) {
+			max_ID = iterator->_ID;
+		}
+		//Append the new state at the end of the linked list
         iterator->next = state_params;
+		//Calculate ID of the new state
+		state_params->_ID = max_ID + 1;
     }
-
 
     if (state_params->init)	//Check if the current state has an init function. If yes, call it
         //Remember: Init is a function pointer, so this is just calling the 
         //init function with the data as an argument
         (state_params->init)(state_params->data);
-
-	//Calculate and return the state ID
-    state_params->_ID = sm._state_count;
+    
     sm._state_count++;
-    printf("Finished initState \n");
     return (state_params->_ID);
 }
 
@@ -54,64 +62,55 @@ state_parameters_t *findState(unsigned int ID)
 {
 	state_parameters_t *iterator;
 
-	//Go through all states until you either reach the end (terator->next == NULL) 
+	//Go through all states until you either reach the end (iterator->next == NULL) 
     //or find the ID (iterator->next->_ID == ID)
 	for (iterator = sm.head; iterator->next && (iterator->next->_ID != ID);
 	     iterator = iterator->next)
 		;
 
-	return iterator->next;
+	if(iterator->next)
+		return iterator->next;
+	else
+		return NULL;
 }
 
 void deleteState(unsigned int ID)
 {
 	state_parameters_t *iterator, *delete;
 
-	//Same as in findState (I wonder why findState is not simply called here)
+	//Go through all states until you either reach the end (iterator->next == NULL) 
+    //or find the ID (iterator->next->_ID == ID)
+	//So iterator->next is the task we are looking for
 	for (iterator = sm.head; iterator->next && (iterator->next->_ID != ID);
-	     iterator = iterator->next)
-		;
+	     iterator = iterator->next);
 
     //Make sure that the task was actually found
     //(that iterator->next is not NULL)
-	if (iterator->next)
-		//Don't know what that next if should do.
-		//iterator->next->_ID can never be 0 here 
-        //(except if someone passed 0 to the function but who would do that?!)... 
-		//Maybe just extra security
-		if (iterator->next->_ID) {
-			delete = iterator->next;
+	if (iterator->next) {
+		delete = iterator->next;
 
-			//If the state which should be deleted is the last one in the list:
-			//Set the next pointer of the previous element to 0
-			//Otherwise: Reconnect the linked list
-			if (!iterator->next->next)
-				iterator->next = NULL;
-			else
-				iterator->next = delete->next;
+		//If the state which should be deleted is the last one in the list:
+		//Set the next pointer of the previous element to 0
+		//Otherwise: Reconnect the linked list
+		if (!iterator->next->next)
+			iterator->next = NULL;
+		else
+			iterator->next = delete->next;
 
-			//free(delete);
-		}
+		sm._state_count--;
+	}
 }
 
 void vStatesHandler(void *pvParameters)
 {
-	unsigned char state_in = 0;
+	//unsigned char state_in = 0;
 
 	TickType_t prev_wake_time;
 	TickType_t last_change = 0;
 
     printf("StatesHandler started \n");
 
-    //Create the queue which can hold all the state IDs
-	state_queue = xQueueCreate(MAX_NUMBER_OF_STATES,
-				   sizeof(unsigned int));
-
-	if (!state_queue) {
-		fprintf(stderr, "State queue creation failed\n");
-		exit(EXIT_FAILURE);
-	}
-
+	//Enter the first state
     (sm.current->enter)(sm.current->data);
 
 	while (1) {
@@ -122,28 +121,22 @@ void vStatesHandler(void *pvParameters)
 			if (sm.current->exit)
 				(sm.current->exit)(sm.current->data);
 
-			if(state_in >= sm._state_count - 1)
+			if(!sm.current->next)
 			{
-				state_in = 0;
 				sm.current = sm.head;
 			}
 			else
 			{
-				state_in++;
 				sm.current = sm.current->next;
 			}
 			
-
 			if (sm.current->enter)
 				(sm.current->enter)(sm.current->data);
-			
-			//Call the run function of the (new) current task
-			if (sm.current->run)
-				(sm.current->run)(sm.current->data);
 		}
-		/*if (xQueueReceive(state_queue, &state_in, 0) == pdTRUE)
-			sm.next = findState(state_in);
-		*/
+		
+		//Call the run function of the current task if it has one
+		if (sm.current->run)
+			(sm.current->run)(sm.current->data);
 
 		vTaskDelayUntil(&prev_wake_time, STATE_MACHINE_INTERVAL);
 	}

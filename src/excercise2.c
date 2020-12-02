@@ -14,7 +14,6 @@ void exercise2exit(void *data)
     vTaskSuspend(Exercise2);
 }
 
-
 void vExercise2(void *pvParameters)
 {
     static char my_string[100]; // structure to store my text

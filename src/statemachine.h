@@ -18,8 +18,6 @@
 #include "global.h"
 #include "miscFunc.h"
 
-//Maximum number of states which can be added to the statemachine
-#define MAX_NUMBER_OF_STATES 10
 //After this number of ticks the state machine is wakened again
 #define STATE_MACHINE_INTERVAL 10
 
@@ -46,7 +44,7 @@ unsigned int initState(state_parameters_t *state_params, void (*init)(void *), v
  * @brief Finds the struct of a state by its ID
  *
  * @param ID ID of the state you are looking for
- * @return Struct of the state
+ * @return Struct of the state if it's found, NULL if not
  */
 state_parameters_t *findState(unsigned int ID);
 
@@ -56,12 +54,6 @@ state_parameters_t *findState(unsigned int ID);
  * @param ID ID of the state to be deleted
  */
 void deleteState(unsigned int ID);
-
-/**
- * @brief Initializes the statemachine 
- * @return 0 on succes
- */
-unsigned char smInit(void);
 
 /**
  * @brief Task which handles switching between states

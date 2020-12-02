@@ -76,6 +76,7 @@ extern TaskHandle_t StatesHandler;
 
 extern SemaphoreHandle_t DrawSignal;
 extern SemaphoreHandle_t ScreenLock;
+extern SemaphoreHandle_t exercise2Sem;
 extern buttons_buffer_t buttons;
 
 #endif

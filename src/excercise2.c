@@ -3,12 +3,14 @@
 void exercise2run(void *data)
 {
     printf("Resuming task 2 \n");
+    xSemaphoreGive(exercise2Sem);
     vTaskResume(Exercise2);
 }
 
 void exercise2exit(void *data)
 {
     printf("Suspending task 2 \n");
+    xSemaphoreTake(exercise2Sem, portMAX_DELAY);
     vTaskSuspend(Exercise2);
 }
 
@@ -26,6 +28,7 @@ void vExercise2(void *pvParameters)
     
 
     while (1) {
+        xSemaphoreTake(exercise2Sem, portMAX_DELAY);
         if (DrawSignal) {
             if (xSemaphoreTake(DrawSignal, portMAX_DELAY) == pdTRUE) {
                 xGetButtonInput(); // Update global input
@@ -134,8 +137,9 @@ void vExercise2(void *pvParameters)
                 if(i >= 2*M_PI)
                     i=0;
                 else
-                    i += 0.02;
+                    i += 0.03;
             }
         }
+        xSemaphoreGive(exercise2Sem);
     }
 }

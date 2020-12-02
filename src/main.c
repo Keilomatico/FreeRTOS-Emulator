@@ -16,8 +16,10 @@ TaskHandle_t StatesHandler = NULL;
 
 SemaphoreHandle_t DrawSignal  = NULL;
 SemaphoreHandle_t ScreenLock = NULL;
+SemaphoreHandle_t exercise2Sem = NULL;
 buttons_buffer_t buttons = { 0 };
 
+//Do I need to lock these?
 static state_parameters_t state_param_ex2 = { 0 };
 static state_parameters_t state_param_ex3 = { 0 };
 static state_parameters_t state_param_ex4 = { 0 };
@@ -80,6 +82,11 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create screen lock");
         goto err_screen_lock;
     }
+    exercise2Sem = xSemaphoreCreateBinary();
+    if (!exercise2Sem) {
+        PRINT_ERROR("Failed to create exercise2 semaphore");
+        goto err_ex2_sem;
+    }
     
     if (xTaskCreate(vSwapBuffers, "BufferSwapTask",
                     mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES,
@@ -99,11 +106,11 @@ int main(int argc, char *argv[])
         goto err_exercise4;
     }
     if (xTaskCreate(vStatesHandler, "StatesHandler", mainGENERIC_STACK_SIZE * 2, NULL,
-                    mainGENERIC_PRIORITY, &StatesHandler) != pdPASS) {
+                    mainGENERIC_PRIORITY+1, &StatesHandler) != pdPASS) {
         goto err_statesHandler;
     }
 
-    vTaskSuspend(Exercise2);
+    //vTaskSuspend(Exercise2);
     vTaskSuspend(Exercise3);
     vTaskSuspend(Exercise4);
 
@@ -128,6 +135,8 @@ err_exercise3:
 err_exercise2:
     vTaskDelete(BufferSwap);
 err_bufferswap:
+    vSemaphoreDelete(exercise2Sem);
+err_ex2_sem:
     vSemaphoreDelete(ScreenLock);
 err_screen_lock:
     vSemaphoreDelete(DrawSignal);

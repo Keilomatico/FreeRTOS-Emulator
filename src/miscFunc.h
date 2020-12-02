@@ -1,0 +1,47 @@
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "semphr.h"
+#include "task.h"
+
+#include "TUM_Ball.h"
+#include "TUM_Draw.h"
+#include "TUM_Event.h"
+#include "TUM_Sound.h"
+#include "TUM_Utils.h"
+#include "TUM_Font.h"
+
+#include "global.h"
+
+void xGetButtonInput(void);
+
+/**
+ * @brief Checks if a specific button has been pressed and handles debouncing
+ *
+ * @param last_change Pointer to a variable which stores the timestamp for the last change
+ * @param Keycode SDL_Scancode of the Key
+ * @return 1 if the button has been pressed, 0 if not or if the Semaphore couldn't have been taken
+ */
+int checkbutton(TickType_t *last_change, int keycode);
+
+/**
+ * @brief Calculates the coordinates for a square
+ *
+ * @param coordinates Points array to return the calculated points (must be at least of length 4)
+ * @param x X coordinate of the center of the square
+ * @param y Y coordinate of the center of the square
+ * @param length Length of each side of the square in pixels
+ * @return 0 on success
+ */
+int getSquareCorrdinates(coord_t *coordinates, int x, int y, int length);
+
+/**
+ * @brief Calculates the coordinates for a triangle
+ *
+ * @param coordinates Points array to return the calculated points (must be at least of length 3)
+ * @param x X coordinate of the center of the square
+ * @param y Y coordinate of the center of the square
+ * @param width Length of the base side in pixels
+ * @param height Height of the triangle in pixels
+ * @return 0 on success
+ */
+int getTriangleCoordinates(coord_t *coordinates, int x, int y, int width, int height);

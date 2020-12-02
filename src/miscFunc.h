@@ -7,18 +7,6 @@
 #ifndef __MISC_H__
 #define __MISC_H__
 
-#include "FreeRTOS.h"
-#include "queue.h"
-#include "semphr.h"
-#include "task.h"
-
-//#include "TUM_Ball.h"
-#include "TUM_Draw.h"
-#include "TUM_Event.h"
-//#include "TUM_Sound.h"
-#include "TUM_Utils.h"
-#include "TUM_Font.h"
-
 #include "global.h"
 
 /**

@@ -7,15 +7,8 @@
 #ifndef __Excercise2_H__
 #define __Excercise2_H__
 
-//#include "TUM_Ball.h"
-#include "TUM_Draw.h"
-#include "TUM_Event.h"
-//#include "TUM_Sound.h"
-//#include "TUM_Utils.h"
-//#include "TUM_Font.h"
-
-#include "miscFunc.h"
 #include "global.h"
+#include "miscFunc.h"
 
 #define INDEX_A    0
 #define INDEX_B    1

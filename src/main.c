@@ -1,27 +1,6 @@
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <inttypes.h>
-
-#include <SDL2/SDL_scancode.h>
-
-#include "FreeRTOS.h"
-#include "queue.h"
-#include "semphr.h"
-#include "task.h"
-
-#include "TUM_Ball.h"
-#include "TUM_Draw.h"
-#include "TUM_Event.h"
-#include "TUM_Sound.h"
-#include "TUM_Utils.h"
-#include "TUM_Font.h"
-
-#include "AsyncIO.h"
-
 #include "global.h"
 #include "miscFunc.h"
+#include "statemachine.h"
 #include "exercise2.h"
 #include "exercise3.h"
 #include "exercise4.h"

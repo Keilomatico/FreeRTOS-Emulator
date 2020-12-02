@@ -1,17 +1,29 @@
+/**
+ * @file miscFunc.h
+ * @author Adrian Keil
+ * @brief Contains a variety of functions, which might me useful in multiple files
+ */
+
+#ifndef __MISC_H__
+#define __MISC_H__
+
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "semphr.h"
 #include "task.h"
 
-#include "TUM_Ball.h"
+//#include "TUM_Ball.h"
 #include "TUM_Draw.h"
 #include "TUM_Event.h"
-#include "TUM_Sound.h"
+//#include "TUM_Sound.h"
 #include "TUM_Utils.h"
 #include "TUM_Font.h"
 
 #include "global.h"
 
+/**
+ * @brief Updates the buttonInputQueue
+ */
 void xGetButtonInput(void);
 
 /**
@@ -45,3 +57,5 @@ int getSquareCorrdinates(coord_t *coordinates, int x, int y, int length);
  * @return 0 on success
  */
 int getTriangleCoordinates(coord_t *coordinates, int x, int y, int width, int height);
+
+#endif

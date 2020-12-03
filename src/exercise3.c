@@ -1,22 +1,32 @@
 #include "exercise3.h"
 
+static void takeEx3Mutex(void)
+{
+    for(int i=0; i<EX3_TASK_NUM; i++)
+        xSemaphoreTake(exercise3Mutex[i], portMAX_DELAY);
+}
+
+static void giveEx3Mutex(void)
+{
+    for(int i=0; i<EX3_TASK_NUM; i++)
+        xSemaphoreGive(exercise3Mutex[i]);
+}
+
 void exercise3enter(void *data)
 {
-    printf("Resuming task 3 \n");
-    xSemaphoreGive(exercise3aMutex);
-    xSemaphoreGive(exercise3bMutex);
-    vTaskResume(Exercise3a);
-    vTaskResume(Exercise3b);
+    printf("Resuming tasks of state 3 \n");
     xSemaphoreTake(ScreenLock, portMAX_DELAY);
     tumDrawClear(White); // Clear screen
     xSemaphoreGive(ScreenLock);
+    giveEx3Mutex();
+    vTaskResume(Exercise3a);
+    vTaskResume(Exercise3b);
 }
 
 void exercise3exit(void *data)
 {
-    printf("Suspending task 3 \n");
-    xSemaphoreTake(exercise3aMutex, portMAX_DELAY);
-    xSemaphoreTake(exercise3bMutex, portMAX_DELAY);
+    printf("Suspending tasks of state 3 \n");
+    takeEx3Mutex();
     vTaskSuspend(Exercise3a);
     vTaskSuspend(Exercise3b);
 }
@@ -27,7 +37,7 @@ void vExercise3a(void *pvParameters)
     char state = 0;
 
     while (1) {
-        xSemaphoreTake(exercise3aMutex, portMAX_DELAY);
+        xSemaphoreTake(exercise3Mutex[0], portMAX_DELAY);
         xSemaphoreTake(ScreenLock, portMAX_DELAY);
         if(state == 0){
             tumDrawCircle (SCREEN_WIDTH / 2 - CENTER_OFFSET,
@@ -44,7 +54,9 @@ void vExercise3a(void *pvParameters)
                 state = 0;
         }
         xSemaphoreGive(ScreenLock);
-        xSemaphoreGive(exercise3aMutex);
+        xSemaphoreGive(exercise3Mutex[0]);
+
+        tumFUtilPrintTaskStateList();
         
         vTaskDelayUntil(&prev_wake_time, TASK3A_INTERVAL);
     }
@@ -56,7 +68,7 @@ void vExercise3b(void *pvParameters)
     char state = 0;
 
     while (1) {
-        xSemaphoreTake(exercise3bMutex, portMAX_DELAY);
+        xSemaphoreTake(exercise3Mutex[1], portMAX_DELAY);
         xSemaphoreTake(ScreenLock, portMAX_DELAY);
         if(state == 0){
             tumDrawCircle (SCREEN_WIDTH / 2 + CENTER_OFFSET,
@@ -73,7 +85,7 @@ void vExercise3b(void *pvParameters)
                 state = 0;
         }
         xSemaphoreGive(ScreenLock);
-        xSemaphoreGive(exercise3bMutex);
+        xSemaphoreGive(exercise3Mutex[1]);
         
         vTaskDelayUntil(&prev_wake_time, TASK3B_INTERVAL);
     }

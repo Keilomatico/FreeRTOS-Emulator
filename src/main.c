@@ -28,8 +28,7 @@ StackType_t task3bStack[ TASK3B_STACK_SIZE ];
 SemaphoreHandle_t DrawSignal  = NULL;
 SemaphoreHandle_t ScreenLock = NULL;
 SemaphoreHandle_t exercise2Mutex = NULL;
-SemaphoreHandle_t exercise3aMutex = NULL;
-SemaphoreHandle_t exercise3bMutex = NULL;
+SemaphoreHandle_t exercise3Mutex[4] = { 0 };
 SemaphoreHandle_t exercise4Mutex = NULL;
 buttons_buffer_t buttons = { 0 };
 
@@ -44,11 +43,22 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
                                     StackType_t **ppxIdleTaskStackBuffer,
                                     uint32_t *pulIdleTaskStackSize )
 {
-static StaticTask_t xIdleTaskTCB;
-static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
+    static StaticTask_t xIdleTaskTCB;
+    static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
     *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
     *ppxIdleTaskStackBuffer = uxIdleTaskStack;
     *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
+                                     StackType_t **ppxTimerTaskStackBuffer,
+                                     uint32_t *pulTimerTaskStackSize )
+{
+    static StaticTask_t xTimerTaskTCB;
+    static StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
+    *ppxTimerTaskTCBBuffer = &xTimerTaskTCB;
+    *ppxTimerTaskStackBuffer = uxTimerTaskStack;
+    *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
 
 void vSwapBuffers(void *pvParameters)
@@ -116,16 +126,11 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create exercise2 semaphore");
         goto err_ex2_sem;
     }
-    exercise3aMutex = xSemaphoreCreateMutex();
-    if (!exercise3aMutex) {
-        PRINT_ERROR("Failed to create exercise3 semaphore");
-        goto err_ex3a_sem;
-    }
-    exercise3bMutex = xSemaphoreCreateMutex();
-    if (!exercise3bMutex) {
-        PRINT_ERROR("Failed to create exercise3 semaphore");
-        goto err_ex3b_sem;
-    }
+    exercise3Mutex[0] = xSemaphoreCreateMutex();
+    exercise3Mutex[1] = xSemaphoreCreateMutex();
+    exercise3Mutex[2] = xSemaphoreCreateMutex();
+    exercise3Mutex[3] = xSemaphoreCreateMutex();
+
     exercise4Mutex = xSemaphoreCreateMutex();
     if (!exercise4Mutex) {
         PRINT_ERROR("Failed to create exercise4 semaphore");
@@ -141,11 +146,11 @@ int main(int argc, char *argv[])
                     mainGENERIC_PRIORITY, &Exercise2) != pdPASS) {
         goto err_exercise2;
     }
-    if (xTaskCreate(vExercise3a, "Exercise3", mainGENERIC_STACK_SIZE * 2, NULL,
+    if (xTaskCreate(vExercise3a, "Exercise3a", mainGENERIC_STACK_SIZE * 2, NULL,
                     mainGENERIC_PRIORITY, &Exercise3a) != pdPASS) {
         goto err_exercise3a;
     }
-    Exercise3b = xTaskCreateStatic(vExercise3b, "Exercise3", TASK3B_STACK_SIZE,
+    Exercise3b = xTaskCreateStatic(vExercise3b, "Exercise3b", TASK3B_STACK_SIZE,
                       NULL, mainGENERIC_PRIORITY+1, task3bStack, &Exercise3b_Buffer);
     if (!Exercise3b) {
         goto err_exercise3b;
@@ -155,7 +160,7 @@ int main(int argc, char *argv[])
         goto err_exercise4;
     }
     if (xTaskCreate(vStatesHandler, "StatesHandler", 
-                    mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES-1,
+                    mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES-2,
                     &StatesHandler) != pdPASS) {
         goto err_statesHandler;
     }
@@ -206,10 +211,10 @@ err_exercise2:
 err_bufferswap:
     vSemaphoreDelete(exercise4Mutex);
 err_ex4_sem:
-    vSemaphoreDelete(exercise3bMutex);
-err_ex3b_sem:
-    vSemaphoreDelete(exercise3aMutex);
-err_ex3a_sem:
+    vSemaphoreDelete(exercise3Mutex[0]);
+    vSemaphoreDelete(exercise3Mutex[1]);
+    vSemaphoreDelete(exercise3Mutex[2]);
+    vSemaphoreDelete(exercise3Mutex[3]);
     vSemaphoreDelete(exercise2Mutex);
 err_ex2_sem:
     vSemaphoreDelete(ScreenLock);

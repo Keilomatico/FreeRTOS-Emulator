@@ -70,7 +70,7 @@
 #define configUSE_IDLE_HOOK             1
 #define configUSE_TICK_HOOK             0
 #define configTICK_RATE_HZ              ( ( TickType_t ) 1000 )
-#define configMINIMAL_STACK_SIZE        ( ( unsigned short ) 4 ) /* This can be made smaller if required. */
+#define configMINIMAL_STACK_SIZE        ( ( unsigned short ) 2 ) /* This can be made smaller if required. */
 #define configTOTAL_HEAP_SIZE           ( ( size_t ) ( 32 * 1024 ) )
 #define configMAX_TASK_NAME_LEN         ( 16 )
 #define configUSE_TRACE_FACILITY        1
@@ -88,6 +88,13 @@
 #define configUSE_APPLICATION_TASK_TAG  1
 #define configQUEUE_REGISTRY_SIZE       0
 #define configMAX_SYSCALL_INTERRUPT_PRIORITY    1
+#define configSUPPORT_STATIC_ALLOCATION 1
+
+/* Software timer related definitions. */
+#define configUSE_TIMERS                        1
+#define configTIMER_TASK_PRIORITY               3
+#define configTIMER_QUEUE_LENGTH                10
+#define configTIMER_TASK_STACK_DEPTH            configMINIMAL_STACK_SIZE
 
 #define configMAX_PRIORITIES        ( 10 )
 #define configMAX_CO_ROUTINE_PRIORITIES ( 2 )

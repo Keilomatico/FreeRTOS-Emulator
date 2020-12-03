@@ -36,6 +36,8 @@
 
 #define DEBOUNCE_DELAY 300
 
+#define EX3_TASK_NUM	5
+
 /**
  * @brief Stores the state of each button on the keyboard
  * and has a Semaphore to be locked
@@ -79,8 +81,7 @@ extern TaskHandle_t StatesHandler;
 extern SemaphoreHandle_t DrawSignal;
 extern SemaphoreHandle_t ScreenLock;
 extern SemaphoreHandle_t exercise2Mutex;
-extern SemaphoreHandle_t exercise3aMutex;
-extern SemaphoreHandle_t exercise3bMutex;
+extern SemaphoreHandle_t exercise3Mutex[4];
 extern SemaphoreHandle_t exercise4Mutex;
 extern buttons_buffer_t buttons;
 

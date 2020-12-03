@@ -7,6 +7,7 @@
 
 #define mainGENERIC_PRIORITY (tskIDLE_PRIORITY)
 #define mainGENERIC_STACK_SIZE ((unsigned short)2560)
+#define TASK3B_STACK_SIZE 100
 
 //Init with NULL, so you can check if it has been initialized
 TaskHandle_t Exercise2 = NULL; 
@@ -15,6 +16,9 @@ TaskHandle_t Exercise3b = NULL;
 TaskHandle_t Exercise4 = NULL;
 TaskHandle_t BufferSwap = NULL;
 TaskHandle_t StatesHandler = NULL;
+
+StaticTask_t Exercise3b_Buffer;
+StackType_t task3bStack[ TASK3B_STACK_SIZE ];
 
 //Draw Signal is used to synchronize vSwapBuffers and the task
 //currently drawing to the screen
@@ -33,6 +37,19 @@ buttons_buffer_t buttons = { 0 };
 static state_parameters_t state_param_ex2 = { 0 };
 static state_parameters_t state_param_ex3 = { 0 };
 static state_parameters_t state_param_ex4 = { 0 };
+
+//See https://www.freertos.org/a00110.html
+//Necessary, because configSUPPORT_STATIC_ALLOCATION is set to 1
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
+                                    StackType_t **ppxIdleTaskStackBuffer,
+                                    uint32_t *pulIdleTaskStackSize )
+{
+static StaticTask_t xIdleTaskTCB;
+static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
+    *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
+    *ppxIdleTaskStackBuffer = uxIdleTaskStack;
+    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
 
 void vSwapBuffers(void *pvParameters)
 {
@@ -116,7 +133,7 @@ int main(int argc, char *argv[])
     
     if (xTaskCreate(vSwapBuffers, "BufferSwapTask",
                     mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES,
-                    BufferSwap) != pdPASS) {
+                    &BufferSwap) != pdPASS) {
         goto err_bufferswap;
     }
     if (xTaskCreate(vExercise2, "Exercise2", mainGENERIC_STACK_SIZE * 2, NULL,
@@ -127,16 +144,18 @@ int main(int argc, char *argv[])
                     mainGENERIC_PRIORITY, &Exercise3a) != pdPASS) {
         goto err_exercise3a;
     }
-    if (xTaskCreate(vExercise3b, "Exercise3", mainGENERIC_STACK_SIZE * 2, NULL,
-                    mainGENERIC_PRIORITY, &Exercise3b) != pdPASS) {
+    Exercise3b = xTaskCreateStatic(vExercise3b, "Exercise3", TASK3B_STACK_SIZE,
+                      NULL, mainGENERIC_PRIORITY+1, task3bStack, &Exercise3b_Buffer);
+    if (!Exercise3b) {
         goto err_exercise3b;
     }
     if (xTaskCreate(vExercise4, "Exercise4", mainGENERIC_STACK_SIZE * 2, NULL,
                     mainGENERIC_PRIORITY, &Exercise4) != pdPASS) {
         goto err_exercise4;
     }
-    if (xTaskCreate(vStatesHandler, "StatesHandler", mainGENERIC_STACK_SIZE * 2, NULL,
-                    mainGENERIC_PRIORITY+1, &StatesHandler) != pdPASS) {
+    if (xTaskCreate(vStatesHandler, "StatesHandler", 
+                    mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES-1,
+                    &StatesHandler) != pdPASS) {
         goto err_statesHandler;
     }
 
@@ -144,6 +163,8 @@ int main(int argc, char *argv[])
     vTaskSuspend(Exercise3a);
     vTaskSuspend(Exercise3b);
     vTaskSuspend(Exercise4);
+
+    tumFUtilPrintTaskStateList();
 
     printf("Created state for Exercise 2 with ID %d. \n",
         initState(&state_param_ex2, NULL, exercise2enter, NULL, exercise2exit, NULL));

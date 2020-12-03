@@ -28,6 +28,7 @@
 #include "TUM_Sound.h"
 #include "TUM_Utils.h"
 #include "TUM_Font.h"
+#include "TUM_FreeRTOS_Utils.h"
 
 #include "AsyncIO.h"
 

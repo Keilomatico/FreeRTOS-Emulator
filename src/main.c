@@ -17,6 +17,7 @@ TaskHandle_t Exercise3circle2 = NULL;
 TaskHandle_t Exercise3button1 = NULL; 
 TaskHandle_t Exercise3button2 = NULL; 
 TaskHandle_t Exercise3count = NULL; 
+TaskHandle_t Exercise3timer = NULL;
 TaskHandle_t Exercise4 = NULL;
 TaskHandle_t BufferSwap = NULL;
 TaskHandle_t StatesHandler = NULL;
@@ -34,20 +35,20 @@ SemaphoreHandle_t ScreenLock = NULL;
 SemaphoreHandle_t exercise2Mutex = NULL;
 SemaphoreHandle_t exercise3Mutex = NULL;
 SemaphoreHandle_t exercise4Mutex = NULL;
-SemaphoreHandle_t circle1Sem = NULL;
-SemaphoreHandle_t circle2Sem = NULL;
 SemaphoreHandle_t button1Notify = NULL;
 
 QueueHandle_t button1Num = NULL;
 QueueHandle_t button2Num = NULL;
 QueueHandle_t counterVal = NULL;
 
+TimerHandle_t mytimer = NULL;
+
 buttons_buffer_t buttons = { 0 };
 
 //Do I need to lock these?
-static state_parameters_t state_param_ex2 = { 0 };
-static state_parameters_t state_param_ex3 = { 0 };
-static state_parameters_t state_param_ex4 = { 0 };
+state_parameters_t state_param_ex2 = { 0 };
+state_parameters_t state_param_ex3 = { 0 };
+state_parameters_t state_param_ex4 = { 0 };
 
 //See https://www.freertos.org/a00110.html
 //Necessary, because configSUPPORT_STATIC_ALLOCATION is set to 1
@@ -142,16 +143,6 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create exercise3 semaphore");
         goto err_ex3_sem;
     }
-    circle1Sem = xSemaphoreCreateBinary();
-    if (!circle1Sem) {
-        PRINT_ERROR("Failed to create circle1 semaphore");
-        goto err_circle1Sem;
-    }
-    circle2Sem = xSemaphoreCreateBinary();
-    if (!circle2Sem) {
-        PRINT_ERROR("Failed to create circle2 semaphore");
-        goto err_circle2Sem;
-    }
     button1Notify = xSemaphoreCreateBinary();
     if (!button1Notify) {
         PRINT_ERROR("Failed to create button1Notify semaphore");
@@ -212,6 +203,10 @@ int main(int argc, char *argv[])
                     mainGENERIC_PRIORITY, &Exercise3count) != pdPASS) {
         goto err_exercise3count;
     }
+    if (xTaskCreate(vExercise3timer, "Exercise3count", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise3timer) != pdPASS) {
+        goto err_exercise3timer;
+    }
     if (xTaskCreate(vExercise4, "Exercise4", mainGENERIC_STACK_SIZE * 2, NULL,
                     mainGENERIC_PRIORITY, &Exercise4) != pdPASS) {
         goto err_exercise4;
@@ -262,6 +257,8 @@ int main(int argc, char *argv[])
 err_statesHandler:
     vTaskDelete(Exercise4);
 err_exercise4:
+    vTaskDelete(Exercise3timer);
+err_exercise3timer:
     vTaskDelete(Exercise3count);
 err_exercise3count:
     vTaskDelete(Exercise3button2);
@@ -282,10 +279,6 @@ err_bufferswap:
 err_ex4_sem:
     vSemaphoreDelete(exercise3Mutex);
 err_ex3_sem:
-    vSemaphoreDelete(circle1Sem);
-err_circle1Sem:
-    vSemaphoreDelete(circle2Sem);
-err_circle2Sem:
     vSemaphoreDelete(button1Notify);
 err_button1Notify:
     vQueueDelete(button1Num);

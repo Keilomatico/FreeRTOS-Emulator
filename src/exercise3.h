@@ -25,7 +25,7 @@
 #define BIT_CIRCLE1_OFF     0x02
 #define BIT_CIRCLE2_ON      0x04
 #define BIT_CIRCLE2_OFF     0x08
-#define BIT_UPDATE_TIME     0x01
+#define BIT_RESET_COUNTER   0x01
 
 void exercise3enter(void *data);
 
@@ -42,5 +42,7 @@ void vExercise3button1(void *pvParameters);
 void vExercise3button2(void *pvParameters);
 
 void vExercise3count(void *pvParameters);
+
+void vExercise3timer(void *pvParameters);
 
 #endif

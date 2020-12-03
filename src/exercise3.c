@@ -12,7 +12,6 @@ void exercise3enter(void *data)
     vTaskResume(Exercise3button2);
     vTaskResume(Exercise3count);
 
-    xTaskNotify(Exercise3count, BIT_UPDATE_TIME, eSetBits);
     xQueueSend(button1Num, &temp, 0);
     xQueueSend(button2Num, &temp, 0);
     xQueueSend(counterVal, &temp, 0);
@@ -56,10 +55,8 @@ void vExercise3draw(void *pvParameters)
                 }
                 if (checkbutton(&last_changeX, KEYCODE(X))) {
                     counterEnab = !counterEnab;
-                    if(counterEnab) {
-                        xTaskNotify(Exercise3count, BIT_UPDATE_TIME, eSetBits);
+                    if(counterEnab)
                         vTaskResume(Exercise3count);
-                    }
                     else
                         vTaskSuspend(Exercise3count);
                 }
@@ -155,7 +152,7 @@ void vExercise3button2(void *pvParameters)
     unsigned int counter = 0;
     while(1)
     {
-        if(ulTaskNotifyTake(pdTRUE, portMAX_DELAY))
+        if(ulTaskNotifyTake(pdTRUE, portMAX_DELAY) & BUTTON2_BIT)
         {
             counter++;
             xQueueOverwrite(button2Num, &counter);
@@ -170,10 +167,20 @@ void vExercise3count(void *pvParameters)
 
     while(1)
     {
-        if(ulTaskNotifyTake(pdTRUE, 0))
-            prev_wake_time = xTaskGetTickCount();
         counter++;
+
+        if(ulTaskNotifyTake(pdTRUE, 0) & BIT_RESET_COUNTER)
+            counter = 0;
         xQueueOverwrite(counterVal, &counter);
         vTaskDelayUntil(&prev_wake_time, COUNTER_INTERVAL);
+    }
+}
+
+void vExercise3timer(void *pvParameters)
+{
+    while(1)
+    {
+        xTaskNotify(Exercise3count, BIT_RESET_COUNTER, eSetBits);
+        vTaskDelay(5000);
     }
 }

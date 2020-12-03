@@ -9,6 +9,9 @@
 
 #include "global.h"
 
+#define FPS_AVERAGE_COUNT 50
+#define FPS_FONT "IBMPlexSans-Bold.ttf"
+
 /**
  * @brief Updates the buttonInputQueue
  */
@@ -45,5 +48,10 @@ int getSquareCorrdinates(coord_t *coordinates, int x, int y, int length);
  * @return 0 on success
  */
 int getTriangleCoordinates(coord_t *coordinates, int x, int y, int width, int height);
+
+/**
+ * @brief Draws the current framerate on the screen
+ */
+void vDrawFPS(void);
 
 #endif

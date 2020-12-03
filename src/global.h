@@ -69,16 +69,18 @@ typedef struct state_parameters {
 } state_parameters_t;
 
 extern TaskHandle_t Exercise2;
-extern TaskHandle_t Exercise3;
+extern TaskHandle_t Exercise3a;
+extern TaskHandle_t Exercise3b;
 extern TaskHandle_t Exercise4;
 extern TaskHandle_t BufferSwap;
 extern TaskHandle_t StatesHandler;
 
 extern SemaphoreHandle_t DrawSignal;
 extern SemaphoreHandle_t ScreenLock;
-extern SemaphoreHandle_t exercise2Sem;
-extern SemaphoreHandle_t exercise3Sem;
-extern SemaphoreHandle_t exercise4Sem;
+extern SemaphoreHandle_t exercise2Mutex;
+extern SemaphoreHandle_t exercise3aMutex;
+extern SemaphoreHandle_t exercise3bMutex;
+extern SemaphoreHandle_t exercise4Mutex;
 extern buttons_buffer_t buttons;
 
 #endif

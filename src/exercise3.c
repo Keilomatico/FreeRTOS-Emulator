@@ -1,45 +1,80 @@
 #include "exercise3.h"
 
-void exercise3run(void *data)
+void exercise3enter(void *data)
 {
     printf("Resuming task 3 \n");
-    xSemaphoreGive(exercise3Sem);
-    vTaskResume(Exercise3);
+    xSemaphoreGive(exercise3aMutex);
+    xSemaphoreGive(exercise3bMutex);
+    vTaskResume(Exercise3a);
+    vTaskResume(Exercise3b);
+    xSemaphoreTake(ScreenLock, portMAX_DELAY);
+    tumDrawClear(White); // Clear screen
+    xSemaphoreGive(ScreenLock);
 }
 
 void exercise3exit(void *data)
 {
     printf("Suspending task 3 \n");
-    xSemaphoreTake(exercise3Sem, portMAX_DELAY);
-    vTaskSuspend(Exercise3);
+    xSemaphoreTake(exercise3aMutex, portMAX_DELAY);
+    xSemaphoreTake(exercise3bMutex, portMAX_DELAY);
+    vTaskSuspend(Exercise3a);
+    vTaskSuspend(Exercise3b);
 }
 
-void vExercise3(void *pvParameters)
+void vExercise3a(void *pvParameters)
 {    
-    static char my_string[100]; // structure to store my text
-    static int my_string_width = 0;
+    TickType_t prev_wake_time = xTaskGetTickCount();
+    char state = 0;
 
     while (1) {
-        xSemaphoreTake(exercise3Sem, portMAX_DELAY);
-        if (DrawSignal) {
-            if (xSemaphoreTake(DrawSignal, portMAX_DELAY) == pdTRUE) {
-                xSemaphoreTake(ScreenLock, portMAX_DELAY);
-                
-                tumDrawClear(White); // Clear screen
-
-                // Format the string into the char array
-                sprintf(my_string, "This is exercise 3");
-                // Get the width of the string on the screen so we can center it
-                // Returns 0 if width was successfully obtained
-                if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
-                    tumDrawText(my_string,
-                                SCREEN_WIDTH / 2 - my_string_width / 2,
-                                SCREEN_HEIGHT / 2 - DEFAULT_FONT_SIZE / 2,
-                                TUMBlue);
-                xSemaphoreGive(ScreenLock);
-            }
+        xSemaphoreTake(exercise3aMutex, portMAX_DELAY);
+        xSemaphoreTake(ScreenLock, portMAX_DELAY);
+        if(state == 0){
+            tumDrawCircle (SCREEN_WIDTH / 2 - CENTER_OFFSET,
+                            SCREEN_HEIGHT / 2,
+                            CIRCLE_RADIUS,
+                            Red);
+            state = 1;
         }
-        vTaskDelay(10);
-        xSemaphoreGive(exercise3Sem);
+        else {
+            tumDrawCircle (SCREEN_WIDTH / 2 - CENTER_OFFSET,
+                            SCREEN_HEIGHT / 2,
+                            CIRCLE_RADIUS,
+                            White);
+                state = 0;
+        }
+        xSemaphoreGive(ScreenLock);
+        xSemaphoreGive(exercise3aMutex);
+        
+        vTaskDelayUntil(&prev_wake_time, TASK3A_INTERVAL);
+    }
+}
+
+void vExercise3b(void *pvParameters)
+{
+    TickType_t prev_wake_time = xTaskGetTickCount();
+    char state = 0;
+
+    while (1) {
+        xSemaphoreTake(exercise3bMutex, portMAX_DELAY);
+        xSemaphoreTake(ScreenLock, portMAX_DELAY);
+        if(state == 0){
+            tumDrawCircle (SCREEN_WIDTH / 2 + CENTER_OFFSET,
+                            SCREEN_HEIGHT / 2,
+                            CIRCLE_RADIUS,
+                            Blue);
+            state = 1;
+        }
+        else {
+            tumDrawCircle (SCREEN_WIDTH / 2 + CENTER_OFFSET,
+                            SCREEN_HEIGHT / 2,
+                            CIRCLE_RADIUS,
+                            White);
+                state = 0;
+        }
+        xSemaphoreGive(ScreenLock);
+        xSemaphoreGive(exercise3bMutex);
+        
+        vTaskDelayUntil(&prev_wake_time, TASK3B_INTERVAL);
     }
 }

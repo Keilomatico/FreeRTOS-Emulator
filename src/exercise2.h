@@ -25,7 +25,7 @@
 #define BUTTON_TEXT_POS_Y       30
 #define MOUSE_OFFSET_DEVIDER    10
 
-void exercise2run(void *data);
+void exercise2enter(void *data);
 
 void exercise2exit(void *data);
 

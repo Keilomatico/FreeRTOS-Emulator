@@ -10,16 +10,23 @@
 
 //Init with NULL, so you can check if it has been initialized
 TaskHandle_t Exercise2 = NULL; 
-TaskHandle_t Exercise3 = NULL;
+TaskHandle_t Exercise3a = NULL;
+TaskHandle_t Exercise3b = NULL;
 TaskHandle_t Exercise4 = NULL;
 TaskHandle_t BufferSwap = NULL;
 TaskHandle_t StatesHandler = NULL;
 
+//Draw Signal is used to synchronize vSwapBuffers and the task
+//currently drawing to the screen
+//vSwapBuffers gives the semaphore once it's finished
+//and the drawing task is supposed to check if it's one
+//if yes take it, do the drawing and don't give it back
 SemaphoreHandle_t DrawSignal  = NULL;
 SemaphoreHandle_t ScreenLock = NULL;
-SemaphoreHandle_t exercise2Sem = NULL;
-SemaphoreHandle_t exercise3Sem = NULL;
-SemaphoreHandle_t exercise4Sem = NULL;
+SemaphoreHandle_t exercise2Mutex = NULL;
+SemaphoreHandle_t exercise3aMutex = NULL;
+SemaphoreHandle_t exercise3bMutex = NULL;
+SemaphoreHandle_t exercise4Mutex = NULL;
 buttons_buffer_t buttons = { 0 };
 
 //Do I need to lock these?
@@ -85,18 +92,24 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create screen lock");
         goto err_screen_lock;
     }
-    exercise2Sem = xSemaphoreCreateBinary();
-    if (!exercise2Sem) {
+    //Use mutexes for the exercise Semaphores to allow for priority inheritance
+    exercise2Mutex = xSemaphoreCreateMutex();
+    if (!exercise2Mutex) {
         PRINT_ERROR("Failed to create exercise2 semaphore");
         goto err_ex2_sem;
     }
-    exercise3Sem = xSemaphoreCreateBinary();
-    if (!exercise3Sem) {
+    exercise3aMutex = xSemaphoreCreateMutex();
+    if (!exercise3aMutex) {
         PRINT_ERROR("Failed to create exercise3 semaphore");
-        goto err_ex3_sem;
+        goto err_ex3a_sem;
     }
-    exercise4Sem = xSemaphoreCreateBinary();
-    if (!exercise4Sem) {
+    exercise3bMutex = xSemaphoreCreateMutex();
+    if (!exercise3bMutex) {
+        PRINT_ERROR("Failed to create exercise3 semaphore");
+        goto err_ex3b_sem;
+    }
+    exercise4Mutex = xSemaphoreCreateMutex();
+    if (!exercise4Mutex) {
         PRINT_ERROR("Failed to create exercise4 semaphore");
         goto err_ex4_sem;
     }
@@ -110,9 +123,13 @@ int main(int argc, char *argv[])
                     mainGENERIC_PRIORITY, &Exercise2) != pdPASS) {
         goto err_exercise2;
     }
-    if (xTaskCreate(vExercise3, "Exercise3", mainGENERIC_STACK_SIZE * 2, NULL,
-                    mainGENERIC_PRIORITY, &Exercise3) != pdPASS) {
-        goto err_exercise3;
+    if (xTaskCreate(vExercise3a, "Exercise3", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise3a) != pdPASS) {
+        goto err_exercise3a;
+    }
+    if (xTaskCreate(vExercise3b, "Exercise3", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise3b) != pdPASS) {
+        goto err_exercise3b;
     }
     if (xTaskCreate(vExercise4, "Exercise4", mainGENERIC_STACK_SIZE * 2, NULL,
                     mainGENERIC_PRIORITY, &Exercise4) != pdPASS) {
@@ -124,15 +141,16 @@ int main(int argc, char *argv[])
     }
 
     vTaskSuspend(Exercise2);
-    vTaskSuspend(Exercise3);
+    vTaskSuspend(Exercise3a);
+    vTaskSuspend(Exercise3b);
     vTaskSuspend(Exercise4);
 
     printf("Created state for Exercise 2 with ID %d. \n",
-        initState(&state_param_ex2, NULL, exercise2run, NULL, exercise2exit, NULL));
+        initState(&state_param_ex2, NULL, exercise2enter, NULL, exercise2exit, NULL));
     printf("Created state for Exercise 3 with ID %d. \n",
-        initState(&state_param_ex3, NULL, exercise3run, NULL, exercise3exit, NULL));
+        initState(&state_param_ex3, NULL, exercise3enter, NULL, exercise3exit, NULL));
     printf("Created state for Exercise 4 with ID %d. \n",
-        initState(&state_param_ex4, NULL, exercise4run, NULL, exercise4exit, NULL));
+        initState(&state_param_ex4, NULL, exercise4enter, NULL, exercise4exit, NULL));
 
     /*//Example on how to delete states and what's happening with them
     state_parameters_t *test;
@@ -156,17 +174,21 @@ int main(int argc, char *argv[])
 err_statesHandler:
     vTaskDelete(Exercise4);
 err_exercise4:
-    vTaskDelete(Exercise3);
-err_exercise3:
+    vTaskDelete(Exercise3b);
+err_exercise3b:
+    vTaskDelete(Exercise3a);
+err_exercise3a:
     vTaskDelete(Exercise2);
 err_exercise2:
     vTaskDelete(BufferSwap);
 err_bufferswap:
-    vSemaphoreDelete(exercise4Sem);
+    vSemaphoreDelete(exercise4Mutex);
 err_ex4_sem:
-    vSemaphoreDelete(exercise3Sem);
-err_ex3_sem:
-    vSemaphoreDelete(exercise2Sem);
+    vSemaphoreDelete(exercise3bMutex);
+err_ex3b_sem:
+    vSemaphoreDelete(exercise3aMutex);
+err_ex3a_sem:
+    vSemaphoreDelete(exercise2Mutex);
 err_ex2_sem:
     vSemaphoreDelete(ScreenLock);
 err_screen_lock:

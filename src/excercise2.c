@@ -1,16 +1,16 @@
 #include "exercise2.h"
 
-void exercise2run(void *data)
+void exercise2enter(void *data)
 {
     printf("Resuming task 2 \n");
-    xSemaphoreGive(exercise2Sem);
+    xSemaphoreGive(exercise2Mutex);
     vTaskResume(Exercise2);
 }
 
 void exercise2exit(void *data)
 {
     printf("Suspending task 2 \n");
-    xSemaphoreTake(exercise2Sem, portMAX_DELAY);
+    xSemaphoreTake(exercise2Mutex, portMAX_DELAY);
     vTaskSuspend(Exercise2);
 }
 
@@ -27,8 +27,8 @@ void vExercise2(void *pvParameters)
     
 
     while (1) {
-        xSemaphoreTake(exercise2Sem, portMAX_DELAY);
         if (DrawSignal) {
+            xSemaphoreTake(exercise2Mutex, portMAX_DELAY);
             if (xSemaphoreTake(DrawSignal, portMAX_DELAY) == pdTRUE) {
                 xGetButtonInput(); // Update global input
 
@@ -138,7 +138,7 @@ void vExercise2(void *pvParameters)
                 else
                     i += 0.03;
             }
+            xSemaphoreGive(exercise2Mutex);
         }
-        xSemaphoreGive(exercise2Sem);
     }
 }

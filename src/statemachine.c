@@ -105,7 +105,7 @@ void vStatesHandler(void *pvParameters)
 {
 	//unsigned char state_in = 0;
 
-	TickType_t prev_wake_time;
+	TickType_t prev_wake_time = xTaskGetTickCount();
 	TickType_t last_change = 0;
 
     printf("StatesHandler started \n");

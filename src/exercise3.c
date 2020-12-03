@@ -1,93 +1,179 @@
 #include "exercise3.h"
 
-static void takeEx3Mutex(void)
-{
-    for(int i=0; i<EX3_TASK_NUM; i++)
-        xSemaphoreTake(exercise3Mutex[i], portMAX_DELAY);
-}
-
-static void giveEx3Mutex(void)
-{
-    for(int i=0; i<EX3_TASK_NUM; i++)
-        xSemaphoreGive(exercise3Mutex[i]);
-}
-
 void exercise3enter(void *data)
 {
+    unsigned int temp = 0;
     printf("Resuming tasks of state 3 \n");
-    xSemaphoreTake(ScreenLock, portMAX_DELAY);
-    tumDrawClear(White); // Clear screen
-    xSemaphoreGive(ScreenLock);
-    giveEx3Mutex();
-    vTaskResume(Exercise3a);
-    vTaskResume(Exercise3b);
+    xSemaphoreGive(exercise3Mutex);
+    vTaskResume(Exercise3draw);
+    vTaskResume(Exercise3circle1);
+    vTaskResume(Exercise3circle2);
+    vTaskResume(Exercise3button1);
+    vTaskResume(Exercise3button2);
+    vTaskResume(Exercise3count);
+
+    xTaskNotify(Exercise3count, BIT_UPDATE_TIME, eSetBits);
+    xQueueSend(button1Num, &temp, 0);
+    xQueueSend(button2Num, &temp, 0);
+    xQueueSend(counterVal, &temp, 0);
 }
 
 void exercise3exit(void *data)
 {
     printf("Suspending tasks of state 3 \n");
-    takeEx3Mutex();
-    vTaskSuspend(Exercise3a);
-    vTaskSuspend(Exercise3b);
+    xSemaphoreTake(exercise3Mutex, portMAX_DELAY);
+    vTaskSuspend(Exercise3draw);
+    vTaskSuspend(Exercise3circle1);
+    vTaskSuspend(Exercise3circle2);
+    vTaskSuspend(Exercise3button1);
+    vTaskSuspend(Exercise3button2);
+    vTaskSuspend(Exercise3count);
 }
 
-void vExercise3a(void *pvParameters)
-{    
-    TickType_t prev_wake_time = xTaskGetTickCount();
-    char state = 0;
+void vExercise3draw(void *pvParameters)
+{
+    char my_string[100];
+    unsigned int input = 0;
+    unsigned int taskState = 0;
+
+    static char counterEnab = 1;
+
+    TickType_t last_changeN = xTaskGetTickCount();
+    TickType_t last_changeM = xTaskGetTickCount();
+    TickType_t last_changeX = xTaskGetTickCount();
 
     while (1) {
-        xSemaphoreTake(exercise3Mutex[0], portMAX_DELAY);
-        xSemaphoreTake(ScreenLock, portMAX_DELAY);
-        if(state == 0){
-            tumDrawCircle (SCREEN_WIDTH / 2 - CENTER_OFFSET,
-                            SCREEN_HEIGHT / 2,
-                            CIRCLE_RADIUS,
-                            Red);
-            state = 1;
+        if (DrawSignal) {
+            xSemaphoreTake(exercise3Mutex, portMAX_DELAY);
+            if (xSemaphoreTake(DrawSignal, portMAX_DELAY) == pdTRUE) {
+                xGetButtonInput(); // Update global input
+
+                if (checkbutton(&last_changeN, KEYCODE(N))) {
+                    xSemaphoreGive(button1Notify);
+                }
+                if (checkbutton(&last_changeM, KEYCODE(M))) {
+                    xTaskNotify(Exercise3button2, BUTTON2_BIT, eSetBits);
+                }
+                if (checkbutton(&last_changeX, KEYCODE(X))) {
+                    counterEnab = !counterEnab;
+                    if(counterEnab) {
+                        xTaskNotify(Exercise3count, BIT_UPDATE_TIME, eSetBits);
+                        vTaskResume(Exercise3count);
+                    }
+                    else
+                        vTaskSuspend(Exercise3count);
+                }
+                
+                tumDrawClear(White); // Clear screen
+                vDrawFPS();
+
+                input = ulTaskNotifyTake(pdTRUE, 0);
+                if(input != 0)
+                    taskState = input;
+                if(taskState & BIT_CIRCLE1_ON)
+                    tumDrawCircle (SCREEN_WIDTH / 2 - CENTER_OFFSET,
+                                    SCREEN_HEIGHT / 2,
+                                    CIRCLE_RADIUS,
+                                    Red);
+                if(taskState & BIT_CIRCLE2_ON)
+                    tumDrawCircle (SCREEN_WIDTH / 2 + CENTER_OFFSET,
+                                    SCREEN_HEIGHT / 2,
+                                    CIRCLE_RADIUS,
+                                    Blue);
+                
+                if(xQueuePeek(button1Num, &input, 0)) {
+                    sprintf(my_string, "Button N has been presses %d times.", input); 
+                    tumDrawText(my_string, BUTTON_TEXT_X, BUTTON_TEXT1_Y, Black);
+                }
+
+                if(xQueuePeek(button2Num, &input, 0)) {
+                    sprintf(my_string, "Button M has been presses %d times.", input); 
+                    tumDrawText(my_string, BUTTON_TEXT_X, BUTTON_TEXT2_Y, Black);
+                }
+
+                if(xQueuePeek(counterVal, &input, 0)) {
+                    sprintf(my_string, "Counter (press X to start and stop): %d", input); 
+                    tumDrawText(my_string, BUTTON_TEXT_X, BUTTON_TEXT3_Y, Black);
+                }
+
+                xSemaphoreGive(ScreenLock);
+            }
+            xSemaphoreGive(exercise3Mutex);
         }
-        else {
-            tumDrawCircle (SCREEN_WIDTH / 2 - CENTER_OFFSET,
-                            SCREEN_HEIGHT / 2,
-                            CIRCLE_RADIUS,
-                            White);
+     }
+}
+
+void vExercise3circle1(void *pvParameters)
+{    
+    TickType_t prev_wake_time = xTaskGetTickCount();
+    char state = 1;
+
+    while (1) {
+        if(state){
+            xTaskNotify(Exercise3draw, BIT_CIRCLE1_ON, eSetBits);
             state = 0;
         }
-        xSemaphoreGive(ScreenLock);
-        xSemaphoreGive(exercise3Mutex[0]);
-
-        tumFUtilPrintTaskStateList();
-        
+        else {
+            xTaskNotify(Exercise3draw, BIT_CIRCLE1_OFF, eSetBits);
+            state = 1;
+        }
         vTaskDelayUntil(&prev_wake_time, TASK3A_INTERVAL);
     }
 }
 
-void vExercise3b(void *pvParameters)
+void vExercise3circle2(void *pvParameters)
 {
     TickType_t prev_wake_time = xTaskGetTickCount();
-    char state = 0;
+    char state = 1;
 
     while (1) {
-        xSemaphoreTake(exercise3Mutex[1], portMAX_DELAY);
-        xSemaphoreTake(ScreenLock, portMAX_DELAY);
-        if(state == 0){
-            tumDrawCircle (SCREEN_WIDTH / 2 + CENTER_OFFSET,
-                            SCREEN_HEIGHT / 2,
-                            CIRCLE_RADIUS,
-                            Blue);
-            state = 1;
-        }
-        else {
-            tumDrawCircle (SCREEN_WIDTH / 2 + CENTER_OFFSET,
-                            SCREEN_HEIGHT / 2,
-                            CIRCLE_RADIUS,
-                            White);
+        if(state){
+            xTaskNotify(Exercise3draw, BIT_CIRCLE2_ON, eSetBits);
             state = 0;
         }
-
-        xSemaphoreGive(ScreenLock);
-        xSemaphoreGive(exercise3Mutex[1]);
-        
+        else {
+            xTaskNotify(Exercise3draw, BIT_CIRCLE2_OFF, eSetBits);
+            state = 1;
+        }
         vTaskDelayUntil(&prev_wake_time, TASK3B_INTERVAL);
+    }
+}
+
+void vExercise3button1(void *pvParameters)
+{
+    unsigned int counter = 0;
+    while(1)
+    {
+        xSemaphoreTake(button1Notify, portMAX_DELAY);
+        counter++;
+        xQueueOverwrite(button1Num, &counter);
+    }
+}
+
+void vExercise3button2(void *pvParameters)
+{
+    unsigned int counter = 0;
+    while(1)
+    {
+        if(ulTaskNotifyTake(pdTRUE, portMAX_DELAY))
+        {
+            counter++;
+            xQueueOverwrite(button2Num, &counter);
+        }
+    }
+}
+
+void vExercise3count(void *pvParameters)
+{
+    TickType_t prev_wake_time = xTaskGetTickCount();
+    unsigned int counter = 0;
+
+    while(1)
+    {
+        if(ulTaskNotifyTake(pdTRUE, 0))
+            prev_wake_time = xTaskGetTickCount();
+        counter++;
+        xQueueOverwrite(counterVal, &counter);
+        vTaskDelayUntil(&prev_wake_time, COUNTER_INTERVAL);
     }
 }

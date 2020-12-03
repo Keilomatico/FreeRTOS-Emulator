@@ -11,8 +11,12 @@
 
 //Init with NULL, so you can check if it has been initialized
 TaskHandle_t Exercise2 = NULL; 
-TaskHandle_t Exercise3a = NULL;
-TaskHandle_t Exercise3b = NULL;
+TaskHandle_t Exercise3draw = NULL; 
+TaskHandle_t Exercise3circle1 = NULL; 
+TaskHandle_t Exercise3circle2 = NULL; 
+TaskHandle_t Exercise3button1 = NULL; 
+TaskHandle_t Exercise3button2 = NULL; 
+TaskHandle_t Exercise3count = NULL; 
 TaskHandle_t Exercise4 = NULL;
 TaskHandle_t BufferSwap = NULL;
 TaskHandle_t StatesHandler = NULL;
@@ -28,8 +32,16 @@ StackType_t task3bStack[ TASK3B_STACK_SIZE ];
 SemaphoreHandle_t DrawSignal  = NULL;
 SemaphoreHandle_t ScreenLock = NULL;
 SemaphoreHandle_t exercise2Mutex = NULL;
-SemaphoreHandle_t exercise3Mutex[4] = { 0 };
+SemaphoreHandle_t exercise3Mutex = NULL;
 SemaphoreHandle_t exercise4Mutex = NULL;
+SemaphoreHandle_t circle1Sem = NULL;
+SemaphoreHandle_t circle2Sem = NULL;
+SemaphoreHandle_t button1Notify = NULL;
+
+QueueHandle_t button1Num = NULL;
+QueueHandle_t button2Num = NULL;
+QueueHandle_t counterVal = NULL;
+
 buttons_buffer_t buttons = { 0 };
 
 //Do I need to lock these?
@@ -125,11 +137,41 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create exercise2 semaphore");
         goto err_ex2_sem;
     }
-    exercise3Mutex[0] = xSemaphoreCreateMutex();
-    exercise3Mutex[1] = xSemaphoreCreateMutex();
-    exercise3Mutex[2] = xSemaphoreCreateMutex();
-    exercise3Mutex[3] = xSemaphoreCreateMutex();
-
+    exercise3Mutex = xSemaphoreCreateMutex();
+    if (!exercise3Mutex) {
+        PRINT_ERROR("Failed to create exercise3 semaphore");
+        goto err_ex3_sem;
+    }
+    circle1Sem = xSemaphoreCreateBinary();
+    if (!circle1Sem) {
+        PRINT_ERROR("Failed to create circle1 semaphore");
+        goto err_circle1Sem;
+    }
+    circle2Sem = xSemaphoreCreateBinary();
+    if (!circle2Sem) {
+        PRINT_ERROR("Failed to create circle2 semaphore");
+        goto err_circle2Sem;
+    }
+    button1Notify = xSemaphoreCreateBinary();
+    if (!button1Notify) {
+        PRINT_ERROR("Failed to create button1Notify semaphore");
+        goto err_button1Notify;
+    }
+    button1Num = xQueueCreate(1, sizeof(unsigned int));
+    if (!button1Num) {
+        PRINT_ERROR("Failed to create button1Num queue");
+        goto err_button1Num;
+    }
+    button2Num = xQueueCreate(1, sizeof(unsigned int));
+    if (!button2Num) {
+        PRINT_ERROR("Failed to create button2Num semaphore");
+        goto err_button2Num;
+    }
+    counterVal = xQueueCreate(1, sizeof(unsigned int));
+    if (!counterVal) {
+        PRINT_ERROR("Failed to create counter semaphore");
+        goto err_counterVal;
+    }
     exercise4Mutex = xSemaphoreCreateMutex();
     if (!exercise4Mutex) {
         PRINT_ERROR("Failed to create exercise4 semaphore");
@@ -145,14 +187,30 @@ int main(int argc, char *argv[])
                     mainGENERIC_PRIORITY, &Exercise2) != pdPASS) {
         goto err_exercise2;
     }
-    if (xTaskCreate(vExercise3a, "Exercise3a", mainGENERIC_STACK_SIZE * 2, NULL,
-                    mainGENERIC_PRIORITY, &Exercise3a) != pdPASS) {
-        goto err_exercise3a;
+    if (xTaskCreate(vExercise3draw, "Exercise3draw", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise3draw) != pdPASS) {
+        goto err_exercise3_draw;
     }
-    Exercise3b = xTaskCreateStatic(vExercise3b, "Exercise3b", TASK3B_STACK_SIZE,
+    if (xTaskCreate(vExercise3circle1, "Exercise3circle1", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise3circle1) != pdPASS) {
+        goto err_exercise3circle1;
+    }
+    Exercise3circle2 = xTaskCreateStatic(vExercise3circle2, "Exercise3circle2", TASK3B_STACK_SIZE,
                       NULL, mainGENERIC_PRIORITY+1, task3bStack, &Exercise3b_Buffer);
-    if (!Exercise3b) {
-        goto err_exercise3b;
+    if (!Exercise3circle2) {
+        goto err_exercise3circle2;
+    }
+    if (xTaskCreate(vExercise3button1, "Exercise3button1", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise3button1) != pdPASS) {
+        goto err_exercise3button1;
+    }
+    if (xTaskCreate(vExercise3button2, "Exercise3button2", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY+1, &Exercise3button2) != pdPASS) {
+        goto err_exercise3button2;
+    }
+    if (xTaskCreate(vExercise3count, "Exercise3count", mainGENERIC_STACK_SIZE * 2, NULL,
+                    mainGENERIC_PRIORITY, &Exercise3count) != pdPASS) {
+        goto err_exercise3count;
     }
     if (xTaskCreate(vExercise4, "Exercise4", mainGENERIC_STACK_SIZE * 2, NULL,
                     mainGENERIC_PRIORITY, &Exercise4) != pdPASS) {
@@ -165,8 +223,12 @@ int main(int argc, char *argv[])
     }
 
     vTaskSuspend(Exercise2);
-    vTaskSuspend(Exercise3a);
-    vTaskSuspend(Exercise3b);
+    vTaskSuspend(Exercise3draw);
+    vTaskSuspend(Exercise3circle1);
+    vTaskSuspend(Exercise3circle2);
+    vTaskSuspend(Exercise3button1);
+    vTaskSuspend(Exercise3button2);
+    vTaskSuspend(Exercise3count);
     vTaskSuspend(Exercise4);
 
     tumFUtilPrintTaskStateList();
@@ -200,20 +262,38 @@ int main(int argc, char *argv[])
 err_statesHandler:
     vTaskDelete(Exercise4);
 err_exercise4:
-    vTaskDelete(Exercise3b);
-err_exercise3b:
-    vTaskDelete(Exercise3a);
-err_exercise3a:
+    vTaskDelete(Exercise3count);
+err_exercise3count:
+    vTaskDelete(Exercise3button2);
+err_exercise3button2:
+    vTaskDelete(Exercise3button1);
+err_exercise3button1:
+    vTaskDelete(Exercise3circle2);
+err_exercise3circle2:
+    vTaskDelete(Exercise3circle1);
+err_exercise3circle1:
+    vTaskDelete(Exercise3draw);
+err_exercise3_draw:
     vTaskDelete(Exercise2);
 err_exercise2:
     vTaskDelete(BufferSwap);
 err_bufferswap:
     vSemaphoreDelete(exercise4Mutex);
 err_ex4_sem:
-    vSemaphoreDelete(exercise3Mutex[0]);
-    vSemaphoreDelete(exercise3Mutex[1]);
-    vSemaphoreDelete(exercise3Mutex[2]);
-    vSemaphoreDelete(exercise3Mutex[3]);
+    vSemaphoreDelete(exercise3Mutex);
+err_ex3_sem:
+    vSemaphoreDelete(circle1Sem);
+err_circle1Sem:
+    vSemaphoreDelete(circle2Sem);
+err_circle2Sem:
+    vSemaphoreDelete(button1Notify);
+err_button1Notify:
+    vQueueDelete(button1Num);
+err_button1Num:
+    vQueueDelete(button2Num);
+err_button2Num:
+    vQueueDelete(counterVal);
+err_counterVal:
     vSemaphoreDelete(exercise2Mutex);
 err_ex2_sem:
     vSemaphoreDelete(ScreenLock);

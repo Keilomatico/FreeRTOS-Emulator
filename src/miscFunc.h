@@ -27,6 +27,18 @@ void xGetButtonInput(void);
 int checkbutton(TickType_t *last_change, int keycode);
 
 /**
+ * @brief Calculates the coordinates for a rectangle
+ *
+ * @param coordinates Points array to return the calculated points (must be at least of length 4)
+ * @param x X coordinate of the center of the square
+ * @param y Y coordinate of the center of the square
+ * @param x_length Length of x side of the square in pixels
+ * @param y_length Length of y side of the square in pixels
+ * @return 0 on success
+ */
+int getRectCorrdinates(coord_t *coordinates, int x, int y, int x_length, int y_length);
+
+/**
  * @brief Calculates the coordinates for a square
  *
  * @param coordinates Points array to return the calculated points (must be at least of length 4)

@@ -29,6 +29,24 @@ int checkbutton(TickType_t *last_change, int keycode)
     return ret;   
 }
 
+int getRectCorrdinates(coord_t *coordinates, int x, int y, int x_length, int y_length)
+{
+    //Top left point
+    coordinates[0].x = x - x_length / 2;
+    coordinates[0].y = y - y_length / 2;
+    //Top right point
+    coordinates[1].x = x + x_length / 2;
+    coordinates[1].y = y - y_length / 2;
+    //Bottom right point
+    coordinates[2].x = x + x_length / 2;
+    coordinates[2].y = y + y_length / 2;
+    //Bottom left point
+    coordinates[3].x = x - x_length / 2;
+    coordinates[3].y = y + y_length / 2;
+
+    return 0;
+}
+
 int getSquareCorrdinates(coord_t *coordinates, int x, int y, int length)
 {
     //Top left point

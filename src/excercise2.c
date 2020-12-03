@@ -60,7 +60,8 @@ void vExercise2(void *pvParameters)
                 xSemaphoreTake(ScreenLock, portMAX_DELAY);
                 
                 tumDrawClear(White); // Clear screen
-
+                vDrawFPS();
+                
                 //Move the entire screen with the mouse
                 tumDrawSetGlobalXOffset(tumEventGetMouseX()/MOUSE_OFFSET_DEVIDER);
                 tumDrawSetGlobalYOffset(tumEventGetMouseY()/MOUSE_OFFSET_DEVIDER);

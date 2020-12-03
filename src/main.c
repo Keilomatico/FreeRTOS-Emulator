@@ -71,7 +71,6 @@ void vSwapBuffers(void *pvParameters)
 
     while (1) {
         if (xSemaphoreTake(ScreenLock, portMAX_DELAY) == pdTRUE) {
-            vDrawFPS();
             tumDrawUpdateScreen();
             tumEventFetchEvents(FETCH_EVENT_BLOCK);
             xSemaphoreGive(ScreenLock);

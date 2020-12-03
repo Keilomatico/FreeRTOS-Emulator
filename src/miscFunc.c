@@ -126,8 +126,8 @@ void vDrawFPS(void)
     sprintf(str, "FPS: %2d", fps);
 
     if (!tumGetTextSize((char *)str, &text_width, NULL))
-        tumDrawText(str, SCREEN_WIDTH - text_width - 10,
-                              SCREEN_HEIGHT - DEFAULT_FONT_SIZE * 1.5,
+        tumDrawText(str, SCREEN_WIDTH - text_width - 40,
+                              SCREEN_HEIGHT - DEFAULT_FONT_SIZE - 40,
                               Skyblue);
 
     tumFontSelectFontFromHandle(cur_font);

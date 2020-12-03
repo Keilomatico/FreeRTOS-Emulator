@@ -51,7 +51,7 @@ void vExercise3a(void *pvParameters)
                             SCREEN_HEIGHT / 2,
                             CIRCLE_RADIUS,
                             White);
-                state = 0;
+            state = 0;
         }
         xSemaphoreGive(ScreenLock);
         xSemaphoreGive(exercise3Mutex[0]);
@@ -82,8 +82,9 @@ void vExercise3b(void *pvParameters)
                             SCREEN_HEIGHT / 2,
                             CIRCLE_RADIUS,
                             White);
-                state = 0;
+            state = 0;
         }
+
         xSemaphoreGive(ScreenLock);
         xSemaphoreGive(exercise3Mutex[1]);
         

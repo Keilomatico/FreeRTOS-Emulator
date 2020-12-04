@@ -38,7 +38,7 @@
 #define DEBOUNCE_DELAY 		300
 #define DEFAULT_TASK_DELAY	10
 
-#define EX3_TASK_NUM	5
+#define FRAMERATE			50
 
 /**
  * @brief Stores the state of each button on the keyboard

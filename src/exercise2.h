@@ -25,10 +25,21 @@
 #define BUTTON_TEXT_POS_Y       30
 #define MOUSE_OFFSET_DEVIDER    10
 
+/**
+ * @brief Enter function for exercise 2. 
+ */
 void exercise2enter(void *data);
 
+/**
+ * @brief Exit function for exercise 2. 
+ */
 void exercise2exit(void *data);
 
+/**
+ * @brief Task function for exercise 2.
+ *        Handles calculation, drawing and button checking
+ * @param pvParameters Not used but necessary for task creation
+ */
 void vExercise2(void *pvParameters);
 
 #endif

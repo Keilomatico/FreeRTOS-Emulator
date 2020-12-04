@@ -17,7 +17,6 @@ TaskHandle_t Exercise3circle2 = NULL;
 TaskHandle_t Exercise3button1 = NULL; 
 TaskHandle_t Exercise3button2 = NULL; 
 TaskHandle_t Exercise3count = NULL; 
-//TaskHandle_t Exercise3timer = NULL;
 TaskHandle_t Exercise4 = NULL;
 TaskHandle_t BufferSwap = NULL;
 TaskHandle_t StatesHandler = NULL;
@@ -225,6 +224,7 @@ int main(int argc, char *argv[])
     vTaskSuspend(Exercise3button2);
     vTaskSuspend(Exercise3count);
     vTaskSuspend(Exercise4);
+    //Note: The timer is created in a dormant state and thus doesn't need to be stopped here
 
     tumFUtilPrintTaskStateList();
 

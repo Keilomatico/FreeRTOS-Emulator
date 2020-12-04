@@ -17,14 +17,16 @@ unsigned int initState(state_parameters_t *state_params, void (*init)(void *), v
     state_parameters_t *iterator;
 	int max_ID = 0;
 
+	//Next pointer is NULL, because it's the end of the list
 	state_params->next = NULL;
-
+	//Inititalize all function pointers
     state_params->init = init;
     state_params->enter = enter;
     state_params->run = run;
     state_params->exit = exit;
     state_params->data = data;
 
+	//If the linked list has been empty, make the current state the head and give it ID 0
     if(!sm.head) {
         printf("sm.head points to Null; Inititalizing it with the current state. \n");
         sm.head = state_params;
@@ -45,7 +47,7 @@ unsigned int initState(state_parameters_t *state_params, void (*init)(void *), v
 		}
 		//Append the new state at the end of the linked list
         iterator->next = state_params;
-		//Calculate ID of the new state
+		//ID of the new state is one more than the current max_ID -> avoids doubled IDs
 		state_params->_ID = max_ID + 1;
     }
 
@@ -55,7 +57,7 @@ unsigned int initState(state_parameters_t *state_params, void (*init)(void *), v
         (state_params->init)(state_params->data);
     
     sm._state_count++;
-    return (state_params->_ID);
+    return (state_params->_ID);	//Return the ID of the new state
 }
 
 state_parameters_t *findState(unsigned int ID)
@@ -103,8 +105,6 @@ void deleteState(unsigned int ID)
 
 void vStatesHandler(void *pvParameters)
 {
-	//unsigned char state_in = 0;
-
 	TickType_t prev_wake_time = xTaskGetTickCount();
 	TickType_t last_change = 0;
 
@@ -115,21 +115,18 @@ void vStatesHandler(void *pvParameters)
 
 	while (1) {
 		xGetButtonInput(); // Update global input
+		//Button E is used to switch between states
 		if(checkbutton(&last_change, KEYCODE(E))) {
 			printf("Button E pressed \n");
 			//Call the exit function of the current task if it exists
 			if (sm.current->exit)
 				(sm.current->exit)(sm.current->data);
-
+			//Go to the next state. If we reched the end of the list, go to the head
 			if(!sm.current->next)
-			{
 				sm.current = sm.head;
-			}
 			else
-			{
 				sm.current = sm.current->next;
-			}
-			
+			//Enter the next state
 			if (sm.current->enter)
 				(sm.current->enter)(sm.current->data);
 		}
@@ -138,6 +135,7 @@ void vStatesHandler(void *pvParameters)
 		if (sm.current->run)
 			(sm.current->run)(sm.current->data);
 
-		vTaskDelayUntil(&prev_wake_time, STATE_MACHINE_INTERVAL);
+		//Delay as specified in STATE_MACHINE_INTERVAL
+		vTaskDelayUntil(&prev_wake_time, pdMS_TO_TICKS(STATE_MACHINE_INTERVAL));
 	}
 }

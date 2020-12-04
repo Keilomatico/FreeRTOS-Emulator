@@ -224,6 +224,7 @@ int main(int argc, char *argv[])
     vTaskSuspend(Exercise3button1);
     vTaskSuspend(Exercise3button2);
     vTaskSuspend(Exercise3count);
+    vTaskSuspend(Exercise3timer);
     vTaskSuspend(Exercise4);
 
     tumFUtilPrintTaskStateList();

@@ -5,12 +5,14 @@ void exercise3enter(void *data)
     unsigned int temp = 0;
     printf("Resuming tasks of state 3 \n");
     xSemaphoreGive(exercise3Mutex);
+    xTaskNotify(Exercise3count, BIT_RESET_COUNTER, eSetBits);
     vTaskResume(Exercise3draw);
     vTaskResume(Exercise3circle1);
     vTaskResume(Exercise3circle2);
     vTaskResume(Exercise3button1);
     vTaskResume(Exercise3button2);
     vTaskResume(Exercise3count);
+    vTaskResume(Exercise3timer);
 
     xQueueSend(button1Num, &temp, 0);
     xQueueSend(button2Num, &temp, 0);
@@ -27,6 +29,7 @@ void exercise3exit(void *data)
     vTaskSuspend(Exercise3button1);
     vTaskSuspend(Exercise3button2);
     vTaskSuspend(Exercise3count);
+    vTaskSuspend(Exercise3timer);
 }
 
 void vExercise3draw(void *pvParameters)
@@ -51,12 +54,14 @@ void vExercise3draw(void *pvParameters)
                     xSemaphoreGive(button1Notify);
                 }
                 if (checkbutton(&last_changeM, KEYCODE(M))) {
-                    xTaskNotify(Exercise3button2, BUTTON2_BIT, eSetBits);
+                    xTaskNotify(Exercise3button2, BIT_BUTTON2, eSetBits);
                 }
                 if (checkbutton(&last_changeX, KEYCODE(X))) {
                     counterEnab = !counterEnab;
-                    if(counterEnab)
+                    if(counterEnab) {
+                        xTaskNotify(Exercise3count, BIT_RESET_COUNTER, eSetBits);
                         vTaskResume(Exercise3count);
+                    }
                     else
                         vTaskSuspend(Exercise3count);
                 }
@@ -139,24 +144,54 @@ void vExercise3circle2(void *pvParameters)
 void vExercise3button1(void *pvParameters)
 {
     unsigned int counter = 0;
+    unsigned int input = 0;
+    unsigned int taskState = 0;
+
     while(1)
     {
-        xSemaphoreTake(button1Notify, portMAX_DELAY);
-        counter++;
-        xQueueOverwrite(button1Num, &counter);
+        input = ulTaskNotifyTake(pdTRUE, 0);
+        if(input != 0)
+            taskState = input;
+
+        if(xSemaphoreTake(button1Notify, 0) == pdTRUE) {
+            counter++;
+            xQueueOverwrite(button1Num, &counter);
+        }
+
+        if(taskState & BIT_RESET_COUNTER) {
+            taskState &= ~BIT_RESET_COUNTER;
+            counter = 0;
+            xQueueOverwrite(button1Num, &counter);
+        }
+
+        vTaskDelay(DEFAULT_TASK_DELAY);
     }
 }
 
 void vExercise3button2(void *pvParameters)
 {
     unsigned int counter = 0;
+    unsigned int input = 0;
+    unsigned int taskState = 0;
+
     while(1)
     {
-        if(ulTaskNotifyTake(pdTRUE, portMAX_DELAY) & BUTTON2_BIT)
-        {
+        input = ulTaskNotifyTake(pdTRUE, 0);
+        if(input != 0)
+            taskState = input;
+        
+        if(taskState & BIT_BUTTON2) {
             counter++;
+            taskState &= ~BIT_BUTTON2;
             xQueueOverwrite(button2Num, &counter);
         }
+        if(taskState & BIT_RESET_COUNTER) {
+            counter = 0;
+            taskState &= ~BIT_RESET_COUNTER;
+            xQueueOverwrite(button2Num, &counter);
+        }
+
+        vTaskDelay(DEFAULT_TASK_DELAY);
     }
 }
 
@@ -167,10 +202,9 @@ void vExercise3count(void *pvParameters)
 
     while(1)
     {
+        if(ulTaskNotifyTake(pdTRUE, 0) & BIT_UPDATE_TIME)
+            prev_wake_time = xTaskGetTickCount();
         counter++;
-
-        if(ulTaskNotifyTake(pdTRUE, 0) & BIT_RESET_COUNTER)
-            counter = 0;
         xQueueOverwrite(counterVal, &counter);
         vTaskDelayUntil(&prev_wake_time, COUNTER_INTERVAL);
     }
@@ -180,7 +214,8 @@ void vExercise3timer(void *pvParameters)
 {
     while(1)
     {
-        xTaskNotify(Exercise3count, BIT_RESET_COUNTER, eSetBits);
+        xTaskNotify(Exercise3button1, BIT_RESET_COUNTER, eSetBits);
+        xTaskNotify(Exercise3button2, BIT_RESET_COUNTER, eSetBits);
         vTaskDelay(5000);
     }
 }

@@ -20,12 +20,13 @@
 #define BUTTON_TEXT2_Y      40
 #define BUTTON_TEXT3_Y      60
 
-#define BUTTON2_BIT         0x01
 #define BIT_CIRCLE1_ON      0x01
 #define BIT_CIRCLE1_OFF     0x02
 #define BIT_CIRCLE2_ON      0x04
 #define BIT_CIRCLE2_OFF     0x08
+#define BIT_BUTTON2         0x02
 #define BIT_RESET_COUNTER   0x01
+#define BIT_UPDATE_TIME     0x01
 
 void exercise3enter(void *data);
 

@@ -24,27 +24,39 @@ TaskHandle_t StatesHandler = NULL;
 StaticTask_t Exercise3b_Buffer;
 StackType_t task3bStack[ TASK3B_STACK_SIZE ];
 
-//Draw Signal is used to synchronize vSwapBuffers and the task
-//currently drawing to the screen
-//vSwapBuffers gives the semaphore once it's finished
-//and the drawing task is supposed to check if it's one
-//if yes take it, do the drawing and don't give it back
+/**
+ * Draw Signal is used to synchronize vSwapBuffers and the task
+ * currently drawing to the screen.
+ * vSwapBuffers gives the semaphore once it's finished
+ * and the drawing task is supposed to check take it, 
+ * do the drawing and don't give it back.
+ */ 
 SemaphoreHandle_t DrawSignal  = NULL;
+//Guards the screen buffer
 SemaphoreHandle_t ScreenLock = NULL;
+//Mutexes to make sure the tasks finish before they are suspended
 SemaphoreHandle_t exercise2Mutex = NULL;
 SemaphoreHandle_t exercise3Mutex = NULL;
 SemaphoreHandle_t exercise4Mutex = NULL;
+//Semaphore to notify Exercise3button1 that the button has been pressed 
 SemaphoreHandle_t button1Notify = NULL;
 
+//Queue Handles for the number of times the buttons have been presses (in ex 3)
 QueueHandle_t button1Num = NULL;
 QueueHandle_t button2Num = NULL;
+//Queue Handle for the number value of the counter (in ex 3)
 QueueHandle_t counterVal = NULL;
 
 TimerHandle_t Exercise3timer = NULL;
 
 buttons_buffer_t buttons = { 0 };
 
-//Do I need to lock these?
+/**
+ * These are the structs holding the parameters for the individual states.
+ * They are initialized before the scheduler starts by calling initState 
+ * and then only read by the statemachine.
+ * Do I need to lock these?
+*/
 state_parameters_t state_param_ex2 = { 0 };
 state_parameters_t state_param_ex3 = { 0 };
 state_parameters_t state_param_ex4 = { 0 };
@@ -61,7 +73,7 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
     *ppxIdleTaskStackBuffer = uxIdleTaskStack;
     *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
-
+//Necessary, because static allocation and timers are enabled
 void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
                                      StackType_t **ppxTimerTaskStackBuffer,
                                      uint32_t *pulTimerTaskStackSize )
@@ -73,6 +85,9 @@ void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
 
+/**
+ * @brief Task to swap the buffer of the screen to have a smooth user experience
+*/
 void vSwapBuffers(void *pvParameters)
 {
     TickType_t xLastWakeTime;
@@ -87,41 +102,40 @@ void vSwapBuffers(void *pvParameters)
             tumEventFetchEvents(FETCH_EVENT_BLOCK);
             xSemaphoreGive(ScreenLock);
             xSemaphoreGive(DrawSignal);
-            vTaskDelayUntil(&xLastWakeTime,
-                            pdMS_TO_TICKS(frameratePeriod));
+            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(frameratePeriod));
         }
     }
 }
 
 int main(int argc, char *argv[])
 {
-    /* Just leave all this stuff in here and don't think about it */
-    char *bin_folder_path = tumUtilGetBinFolderPath(argv[0]); //Required for images
-
+    //Required for images
+    char *bin_folder_path = tumUtilGetBinFolderPath(argv[0]);
+    
     printf("Initializing: ");
 
-    /* Initialization (mostly of the semaphores/mutexes) */
+    // Initialization
     if (tumDrawInit(bin_folder_path)) {
         PRINT_ERROR("Failed to initialize drawing");
         goto err_init_drawing;
     }
-
     if (tumEventInit()) {
         PRINT_ERROR("Failed to initialize events");
         goto err_init_events;
     }
-
     if (tumSoundInit(bin_folder_path)) {
         PRINT_ERROR("Failed to initialize audio");
         goto err_init_audio;
     }
 
-    buttons.lock = xSemaphoreCreateMutex(); // Locking mechanism
+    //Generate all the Semaphores and Mutexes
+    //If something fails, go to the appropriate error to delete them again
+    buttons.lock = xSemaphoreCreateMutex();
     if (!buttons.lock) {
         PRINT_ERROR("Failed to create buttons lock");
         goto err_buttons_lock;
     }
-    DrawSignal = xSemaphoreCreateBinary(); // Screen buffer locking
+    DrawSignal = xSemaphoreCreateBinary();
     if (!DrawSignal) {
         PRINT_ERROR("Failed to create draw signal");
         goto err_draw_signal;
@@ -131,7 +145,7 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create screen lock");
         goto err_screen_lock;
     }
-    //Use mutexes for the exercise Semaphores to allow for priority inheritance
+    //Use mutexes for the exercises to allow for priority inheritance
     exercise2Mutex = xSemaphoreCreateMutex();
     if (!exercise2Mutex) {
         PRINT_ERROR("Failed to create exercise2 semaphore");
@@ -168,6 +182,8 @@ int main(int argc, char *argv[])
         goto err_ex4_sem;
     }
     
+    //Create all the tasks and the timer
+    //If something fails, go to the appropriate error to delete them again
     if (xTaskCreate(vSwapBuffers, "BufferSwapTask",
                     mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES,
                     &BufferSwap) != pdPASS) {
@@ -216,6 +232,7 @@ int main(int argc, char *argv[])
         goto err_statesHandler;
     }
 
+    //Suspend all tasks for the exercises
     vTaskSuspend(Exercise2);
     vTaskSuspend(Exercise3draw);
     vTaskSuspend(Exercise3circle1);
@@ -228,6 +245,7 @@ int main(int argc, char *argv[])
 
     tumFUtilPrintTaskStateList();
 
+    //Initialize states by the statemachine
     printf("Created state for Exercise 2 with ID %d. \n",
         initState(&state_param_ex2, NULL, exercise2enter, NULL, exercise2exit, NULL));
     printf("Created state for Exercise 3 with ID %d. \n",
@@ -235,8 +253,8 @@ int main(int argc, char *argv[])
     printf("Created state for Exercise 4 with ID %d. \n",
         initState(&state_param_ex4, NULL, exercise4enter, NULL, exercise4exit, NULL));
 
-    /*//Example on how to delete states and what's happening with them
-    state_parameters_t *test;
+    //Example on how to delete states and what's happening with them
+    /*state_parameters_t *test;
     test = findState(1);
     printf("test has ID %d (should be 1)\n", test->_ID);
 
@@ -250,10 +268,12 @@ int main(int argc, char *argv[])
     printf("Created state for Exercise 3 with ID %d. \n",
         initState(&state_param_ex3, NULL, exercise3run, NULL, exercise3exit, NULL));
     */
+
     vTaskStartScheduler();
 
     return EXIT_SUCCESS;
 
+//Error handling -> Deinitialisation of all the things that were created
 err_statesHandler:
     vTaskDelete(Exercise4);
 err_exercise4:
@@ -306,6 +326,7 @@ err_init_drawing:
     vSemaphoreDelete(state_param_ex2.lock);
 }
 
+//Just leave these things in here
 // cppcheck-suppress unusedFunction
 __attribute__((unused)) void vMainQueueSendPassed(void)
 {

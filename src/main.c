@@ -17,7 +17,7 @@ TaskHandle_t Exercise3circle2 = NULL;
 TaskHandle_t Exercise3button1 = NULL; 
 TaskHandle_t Exercise3button2 = NULL; 
 TaskHandle_t Exercise3count = NULL; 
-TaskHandle_t Exercise3timer = NULL;
+//TaskHandle_t Exercise3timer = NULL;
 TaskHandle_t Exercise4 = NULL;
 TaskHandle_t BufferSwap = NULL;
 TaskHandle_t StatesHandler = NULL;
@@ -41,7 +41,7 @@ QueueHandle_t button1Num = NULL;
 QueueHandle_t button2Num = NULL;
 QueueHandle_t counterVal = NULL;
 
-TimerHandle_t mytimer = NULL;
+TimerHandle_t Exercise3timer = NULL;
 
 buttons_buffer_t buttons = { 0 };
 
@@ -203,10 +203,10 @@ int main(int argc, char *argv[])
                     mainGENERIC_PRIORITY, &Exercise3count) != pdPASS) {
         goto err_exercise3count;
     }
-    if (xTaskCreate(vExercise3timer, "Exercise3count", mainGENERIC_STACK_SIZE * 2, NULL,
-                    mainGENERIC_PRIORITY, &Exercise3timer) != pdPASS) {
+    Exercise3timer = xTimerCreate("Exercise3count", COUNTER_RESET, pdTRUE,
+                    ( void * ) 0, vExercise3timerCallback);
+    if(!Exercise3timer)
         goto err_exercise3timer;
-    }
     if (xTaskCreate(vExercise4, "Exercise4", mainGENERIC_STACK_SIZE * 2, NULL,
                     mainGENERIC_PRIORITY, &Exercise4) != pdPASS) {
         goto err_exercise4;
@@ -224,7 +224,6 @@ int main(int argc, char *argv[])
     vTaskSuspend(Exercise3button1);
     vTaskSuspend(Exercise3button2);
     vTaskSuspend(Exercise3count);
-    vTaskSuspend(Exercise3timer);
     vTaskSuspend(Exercise4);
 
     tumFUtilPrintTaskStateList();
@@ -258,7 +257,7 @@ int main(int argc, char *argv[])
 err_statesHandler:
     vTaskDelete(Exercise4);
 err_exercise4:
-    vTaskDelete(Exercise3timer);
+    xTimerDelete(Exercise3timer, portMAX_DELAY);
 err_exercise3timer:
     vTaskDelete(Exercise3count);
 err_exercise3count:

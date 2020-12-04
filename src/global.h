@@ -80,7 +80,7 @@ extern TaskHandle_t Exercise3circle2;
 extern TaskHandle_t Exercise3button1;
 extern TaskHandle_t Exercise3button2;
 extern TaskHandle_t Exercise3count;
-extern TaskHandle_t Exercise3timer;
+//extern TaskHandle_t Exercise3timer;
 extern TaskHandle_t Exercise4;
 extern TaskHandle_t BufferSwap;
 extern TaskHandle_t StatesHandler;
@@ -96,7 +96,7 @@ extern QueueHandle_t button1Num;
 extern QueueHandle_t button2Num;
 extern QueueHandle_t counterVal;
 
-extern TimerHandle_t mytimer;
+extern TimerHandle_t Exercise3timer;
 
 extern buttons_buffer_t buttons;
 

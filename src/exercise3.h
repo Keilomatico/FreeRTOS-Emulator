@@ -13,6 +13,7 @@
 #define TASK3A_INTERVAL     1000
 #define TASK3B_INTERVAL     500
 #define COUNTER_INTERVAL    1000
+#define COUNTER_RESET       15000
 #define CIRCLE_RADIUS       30
 #define CENTER_OFFSET       80
 #define BUTTON_TEXT_X       30
@@ -44,6 +45,6 @@ void vExercise3button2(void *pvParameters);
 
 void vExercise3count(void *pvParameters);
 
-void vExercise3timer(void *pvParameters);
+void vExercise3timerCallback(TimerHandle_t xTimer);
 
 #endif

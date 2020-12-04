@@ -12,7 +12,7 @@ void exercise3enter(void *data)
     vTaskResume(Exercise3button1);
     vTaskResume(Exercise3button2);
     vTaskResume(Exercise3count);
-    vTaskResume(Exercise3timer);
+    xTimerStart(Exercise3timer, portMAX_DELAY);
 
     xQueueSend(button1Num, &temp, 0);
     xQueueSend(button2Num, &temp, 0);
@@ -29,7 +29,7 @@ void exercise3exit(void *data)
     vTaskSuspend(Exercise3button1);
     vTaskSuspend(Exercise3button2);
     vTaskSuspend(Exercise3count);
-    vTaskSuspend(Exercise3timer);
+    xTimerStop(Exercise3timer, portMAX_DELAY);
 }
 
 void vExercise3draw(void *pvParameters)
@@ -210,12 +210,8 @@ void vExercise3count(void *pvParameters)
     }
 }
 
-void vExercise3timer(void *pvParameters)
+void vExercise3timerCallback(TimerHandle_t xTimer)
 {
-    while(1)
-    {
-        xTaskNotify(Exercise3button1, BIT_RESET_COUNTER, eSetBits);
-        xTaskNotify(Exercise3button2, BIT_RESET_COUNTER, eSetBits);
-        vTaskDelay(5000);
-    }
+    xTaskNotify(Exercise3button1, BIT_RESET_COUNTER, eSetBits);
+    xTaskNotify(Exercise3button2, BIT_RESET_COUNTER, eSetBits);
 }

@@ -1,7 +1,6 @@
 /**
  * @file global.h
  * @author Adrian Keil
- * @date 02 December 2020
  * @brief This is the global header, which contains 
  * all globally shared variables and structures
  */

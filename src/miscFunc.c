@@ -13,18 +13,19 @@ int checkbutton(int keycode)
     TickType_t current_tick;
     int ret = 0;
 
+    //Buttons is globally shared, so take the mutex first
     if (xSemaphoreTake(buttons.lock, 0) == pdTRUE) {
         current_tick = xTaskGetTickCount();
-        //Rising edge detected
+        //Check for rising edge
         if (buttons.currentState[keycode] > 0 && buttons.lastState[keycode] == 0) {
-	        if(current_tick - buttons.lastEdge[keycode] > DEBOUNCE_DELAY) {
+            //Check if the last and current edge are far enough apart
+            if(current_tick - buttons.lastEdge[keycode] > DEBOUNCE_DELAY)
                 ret = 1;
-                buttons.lastState[keycode] = 1;
-            }
+            //In any case an edge was detected so update the timestamp
             buttons.lastEdge[keycode] = current_tick;
         }
-        else if(buttons.currentState[keycode] == 0)
-            buttons.lastState[keycode] = 0;
+        //Update lastState for the next call
+        buttons.lastState[keycode] = buttons.currentState[keycode];
         xSemaphoreGive(buttons.lock);
     }
     return ret;

@@ -239,23 +239,23 @@ int main(int argc, char *argv[])
         goto err_statesHandler;
     }
     if (xTaskCreate(vExercise4draw, "Exercise4draw", mainGENERIC_STACK_SIZE * 2, NULL,
-                    5, &Exercise4draw) != pdPASS) {
+                    EX4_DRAW_PRIO, &Exercise4draw) != pdPASS) {
         goto err_exercise4_draw;
     }
     if (xTaskCreate(vExercise4task1, "Exercise4task1", mainGENERIC_STACK_SIZE * 2, NULL,
-                    1, &Exercise4task1) != pdPASS) {
+                    EX4_TASK1_PRIO, &Exercise4task1) != pdPASS) {
         goto err_exercise4_task1;
     }
     if (xTaskCreate(vExercise4task2, "Exercise4task2", mainGENERIC_STACK_SIZE * 2, NULL,
-                    2, &Exercise4task2) != pdPASS) {
+                    EX4_TASK2_PRIO, &Exercise4task2) != pdPASS) {
         goto err_exercise4_task2;
     }
     if (xTaskCreate(vExercise4task3, "Exercise4task3", mainGENERIC_STACK_SIZE * 2, NULL,
-                    3, &Exercise4task3) != pdPASS) {
+                    EX4_TASK3_PRIO, &Exercise4task3) != pdPASS) {
         goto err_exercise4_task3;
     }
     if (xTaskCreate(vExercise4task4, "Exercise4task4", mainGENERIC_STACK_SIZE * 2, NULL,
-                    4, &Exercise4task4) != pdPASS) {
+                    EX4_TASK4_PRIO, &Exercise4task4) != pdPASS) {
         goto err_exercise4_task4;
     }
 

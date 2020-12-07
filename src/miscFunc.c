@@ -8,26 +8,23 @@ void xGetButtonInput(void)
     }
 }
 
-int checkbutton(TickType_t *last_change, int keycode)
+int checkbutton(TickType_t *last_pressed, int keycode)
 {
     TickType_t current_tick;
-    static int ret;
+    int ret = 0;
 
     if (xSemaphoreTake(buttons.lock, 0) == pdTRUE) {
         current_tick = xTaskGetTickCount();
         //Debounce: Checks if the time in between two button presses has been long enough
-        if (buttons.buttons[keycode] > 0 && current_tick - *last_change > DEBOUNCE_DELAY) {
-            *last_change = current_tick;
+        if (buttons.buttons[keycode] > 0) {
+	        if(current_tick - *last_pressed > DEBOUNCE_DELAY)
+	            ret = 1;
+            *last_pressed = current_tick;
             //Reset the button value in the struct so it can be pressed again
             buttons.buttons[keycode] = 0;
-            ret = 1;
         }
-        else
-            ret = 0;
         xSemaphoreGive(buttons.lock);
     }
-    else
-        ret = 0;    //Return 0 if the button lock could not be taken
     return ret;   
 }
 

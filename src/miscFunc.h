@@ -20,11 +20,10 @@ void xGetButtonInput(void);
 /**
  * @brief Checks if a specific button has been pressed and handles debouncing
  *
- * @param last_change Pointer to a variable which stores the timestamp for the last change
  * @param Keycode SDL_Scancode of the Key
  * @return 1 if the button has been pressed, 0 if not or if the Semaphore couldn't have been taken
  */
-int checkbutton(TickType_t *last_pressed, int keycode);
+int checkbutton(int keycode);
 
 /**
  * @brief Calculates the coordinates for a rectangle

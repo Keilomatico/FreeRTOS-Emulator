@@ -3,29 +3,31 @@
 void xGetButtonInput(void)
 {
     if (xSemaphoreTake(buttons.lock, 0) == pdTRUE) {
-        xQueueReceive(buttonInputQueue, &buttons.buttons, 0);
+        xQueueReceive(buttonInputQueue, &buttons.currentState, 0);
         xSemaphoreGive(buttons.lock);
     }
 }
 
-int checkbutton(TickType_t *last_pressed, int keycode)
+int checkbutton(int keycode)
 {
     TickType_t current_tick;
     int ret = 0;
 
     if (xSemaphoreTake(buttons.lock, 0) == pdTRUE) {
         current_tick = xTaskGetTickCount();
-        //Debounce: Checks if the time in between two button presses has been long enough
-        if (buttons.buttons[keycode] > 0) {
-	        if(current_tick - *last_pressed > DEBOUNCE_DELAY)
-	            ret = 1;
-            *last_pressed = current_tick;
-            //Reset the button value in the struct so it can be pressed again
-            buttons.buttons[keycode] = 0;
+        //Rising edge detected
+        if (buttons.currentState[keycode] > 0 && buttons.lastState[keycode] == 0) {
+	        if(current_tick - buttons.lastEdge[keycode] > DEBOUNCE_DELAY) {
+                ret = 1;
+                buttons.lastState[keycode] = 1;
+            }
+            buttons.lastEdge[keycode] = current_tick;
         }
+        else if(buttons.currentState[keycode] == 0)
+            buttons.lastState[keycode] = 0;
         xSemaphoreGive(buttons.lock);
     }
-    return ret;   
+    return ret;
 }
 
 int getRectCorrdinates(coord_t *coordinates, int x, int y, int x_length, int y_length)

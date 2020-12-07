@@ -26,11 +26,6 @@ void vExercise2(void *pvParameters)
     int offset_x;               //used to temporarily store the offset in x direction
     int offset_y;               //used to temporarily store the offset in y direction
     static int counter[4] = { 0 };  //Counts the number of times a button has been pressed
-    TickType_t last_change[4];  //Stores the timestamp of the last change of a button
-
-    for(int i=0; i<4; i++) {
-        last_change[i] = xTaskGetTickCount();
-    }
 
     while (1) {
         if (DrawSignal) {   //Check if the Semaphore has been initialized
@@ -48,10 +43,10 @@ void vExercise2(void *pvParameters)
             }
 
             //Update the counter values
-            counter[INDEX_A] += checkbutton(&last_change[INDEX_A], KEYCODE(A));
-            counter[INDEX_B] += checkbutton(&last_change[INDEX_B], KEYCODE(B));
-            counter[INDEX_C] += checkbutton(&last_change[INDEX_C], KEYCODE(C));
-            counter[INDEX_D] += checkbutton(&last_change[INDEX_D], KEYCODE(D));
+            counter[INDEX_A] += checkbutton(KEYCODE(A));
+            counter[INDEX_B] += checkbutton(KEYCODE(B));
+            counter[INDEX_C] += checkbutton(KEYCODE(C));
+            counter[INDEX_D] += checkbutton(KEYCODE(D));
 
             //Take the ScreenLock to start drawing
             xSemaphoreTake(ScreenLock, portMAX_DELAY);

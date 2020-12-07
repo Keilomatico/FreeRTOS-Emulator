@@ -55,10 +55,6 @@ void vExercise3draw(void *pvParameters)
 
     static char counterEnab = 1;
 
-    TickType_t last_changeN = xTaskGetTickCount();
-    TickType_t last_changeM = xTaskGetTickCount();
-    TickType_t last_changeX = xTaskGetTickCount();
-
     while (1) {
         if (DrawSignal) {
             xSemaphoreTake(exercise3Mutex, portMAX_DELAY);
@@ -66,14 +62,14 @@ void vExercise3draw(void *pvParameters)
             xGetButtonInput(); // Update global input
 
             //Inform the other tasks of button changes
-            if (checkbutton(&last_changeN, KEYCODE(N))) {
+            if (checkbutton(KEYCODE(N))) {
                 xSemaphoreGive(button1Notify);
             }
-            if (checkbutton(&last_changeM, KEYCODE(M))) {
+            if (checkbutton(KEYCODE(M))) {
                 xTaskNotify(Exercise3button2, BIT_BUTTON2, eSetBits);
             }
             //Enable or disable the counter
-            if (checkbutton(&last_changeX, KEYCODE(X))) {
+            if (checkbutton(KEYCODE(X))) {
                 counterEnab = !counterEnab;
                 if(counterEnab) {
                     xTaskNotify(Exercise3count, BIT_RESET_COUNTER, eSetBits);

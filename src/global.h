@@ -34,7 +34,7 @@
 
 #define KEYCODE(CHAR) SDL_SCANCODE_##CHAR
 
-#define DEBOUNCE_DELAY 		550
+#define DEBOUNCE_DELAY 		100
 #define DEFAULT_TASK_DELAY	10
 
 #define FRAMERATE			50
@@ -44,7 +44,9 @@
  * and has a Semaphore to be locked
  */
 typedef struct buttons_buffer {
-    unsigned char buttons[SDL_NUM_SCANCODES];
+    unsigned char currentState[SDL_NUM_SCANCODES];
+	unsigned char lastState[SDL_NUM_SCANCODES];
+	TickType_t lastEdge[SDL_NUM_SCANCODES];
     SemaphoreHandle_t lock;
 }buttons_buffer_t;
 

@@ -106,7 +106,6 @@ void deleteState(unsigned int ID)
 void vStatesHandler(void *pvParameters)
 {
 	TickType_t prev_wake_time = xTaskGetTickCount();
-	TickType_t last_change = 0;
 
     printf("StatesHandler started \n");
 
@@ -116,7 +115,7 @@ void vStatesHandler(void *pvParameters)
 	while (1) {
 		xGetButtonInput(); // Update global input
 		//Button E is used to switch between states
-		if(checkbutton(&last_change, KEYCODE(E))) {
+		if(checkbutton(KEYCODE(E))) {
 			printf("Button E pressed \n");
 			//Call the exit function of the current task if it exists
 			if (sm.current->exit)

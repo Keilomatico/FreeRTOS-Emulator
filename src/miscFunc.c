@@ -135,3 +135,12 @@ void vDrawFPS(void)
     tumFontSelectFontFromHandle(cur_font);
     tumFontPutFontHandle(cur_font);
 }
+
+void appendToStr(char *theString, char theCharacter)
+{
+    int iterator;
+    //Go through the string until you reach the end
+    for(iterator = 0; theString[iterator] != 0; iterator++);
+    //Append the character
+    theString[iterator] = theCharacter;
+}

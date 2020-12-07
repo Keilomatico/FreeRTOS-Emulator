@@ -81,9 +81,13 @@ extern TaskHandle_t Exercise3circle2;
 extern TaskHandle_t Exercise3button1;
 extern TaskHandle_t Exercise3button2;
 extern TaskHandle_t Exercise3count;
-extern TaskHandle_t Exercise4;
 extern TaskHandle_t BufferSwap;
 extern TaskHandle_t StatesHandler;
+extern TaskHandle_t Exercise4draw;
+extern TaskHandle_t Exercise4task1;
+extern TaskHandle_t Exercise4task2;
+extern TaskHandle_t Exercise4task3;
+extern TaskHandle_t Exercise4task4;
 
 extern SemaphoreHandle_t DrawSignal;
 extern SemaphoreHandle_t ScreenLock;
@@ -91,6 +95,7 @@ extern SemaphoreHandle_t exercise2Mutex;
 extern SemaphoreHandle_t exercise3Mutex;
 extern SemaphoreHandle_t exercise4Mutex;
 extern SemaphoreHandle_t button1Notify;
+extern SemaphoreHandle_t task3Notify;
 
 extern QueueHandle_t button1Num;
 extern QueueHandle_t button2Num;

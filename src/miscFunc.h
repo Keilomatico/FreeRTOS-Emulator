@@ -65,4 +65,12 @@ int getTriangleCoordinates(coord_t *coordinates, int x, int y, int width, int he
  */
 void vDrawFPS(void);
 
+/**
+ * @brief Appends a character to an existing string (char array)
+ *
+ * @param theString String to which the char should be appended
+ * @param theCharacter The character which should be appended
+ */
+void appendToStr(char *theString, char theCharacter);
+
 #endif

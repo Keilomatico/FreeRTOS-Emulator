@@ -17,9 +17,13 @@ TaskHandle_t Exercise3circle2 = NULL;
 TaskHandle_t Exercise3button1 = NULL; 
 TaskHandle_t Exercise3button2 = NULL; 
 TaskHandle_t Exercise3count = NULL; 
-TaskHandle_t Exercise4 = NULL;
 TaskHandle_t BufferSwap = NULL;
 TaskHandle_t StatesHandler = NULL;
+TaskHandle_t Exercise4draw = NULL;
+TaskHandle_t Exercise4task1 = NULL;
+TaskHandle_t Exercise4task2 = NULL;
+TaskHandle_t Exercise4task3 = NULL;
+TaskHandle_t Exercise4task4 = NULL;
 
 StaticTask_t Exercise3b_Buffer;
 StackType_t task3bStack[ TASK3B_STACK_SIZE ];
@@ -40,6 +44,8 @@ SemaphoreHandle_t exercise3Mutex = NULL;
 SemaphoreHandle_t exercise4Mutex = NULL;
 //Semaphore to notify Exercise3button1 that the button has been pressed 
 SemaphoreHandle_t button1Notify = NULL;
+//Semaphore to notify task3 that it should wake up
+SemaphoreHandle_t task3Notify = NULL;
 
 //Queue Handles for the number of times the buttons have been presses (in ex 3)
 QueueHandle_t button1Num = NULL;
@@ -55,7 +61,7 @@ buttons_buffer_t buttons = { 0 };
  * These are the structs holding the parameters for the individual states.
  * They are initialized before the scheduler starts by calling initState 
  * and then only read by the statemachine.
- * Do I need to lock these?
+ * Do I need to lock these? I don't think to...
 */
 state_parameters_t state_param_ex2 = { 0 };
 state_parameters_t state_param_ex3 = { 0 };
@@ -168,12 +174,12 @@ int main(int argc, char *argv[])
     }
     button2Num = xQueueCreate(1, sizeof(unsigned int));
     if (!button2Num) {
-        PRINT_ERROR("Failed to create button2Num semaphore");
+        PRINT_ERROR("Failed to create button2Num queue");
         goto err_button2Num;
     }
     counterVal = xQueueCreate(1, sizeof(unsigned int));
     if (!counterVal) {
-        PRINT_ERROR("Failed to create counter semaphore");
+        PRINT_ERROR("Failed to create counter queue");
         goto err_counterVal;
     }
     exercise4Mutex = xSemaphoreCreateMutex();
@@ -181,7 +187,12 @@ int main(int argc, char *argv[])
         PRINT_ERROR("Failed to create exercise4 semaphore");
         goto err_ex4_sem;
     }
-    
+    task3Notify = xSemaphoreCreateBinary();
+    if(!task3Notify) {
+        PRINT_ERROR("Failed to create task3Notify semaphore");
+        goto err_task3Notify;
+    }
+
     //Create all the tasks and the timer
     //If something fails, go to the appropriate error to delete them again
     if (xTaskCreate(vSwapBuffers, "BufferSwapTask",
@@ -222,14 +233,30 @@ int main(int argc, char *argv[])
                     ( void * ) 0, vExercise3timerCallback);
     if(!Exercise3timer)
         goto err_exercise3timer;
-    if (xTaskCreate(vExercise4, "Exercise4", mainGENERIC_STACK_SIZE * 2, NULL,
-                    mainGENERIC_PRIORITY, &Exercise4) != pdPASS) {
-        goto err_exercise4;
-    }
     if (xTaskCreate(vStatesHandler, "StatesHandler", 
                     mainGENERIC_STACK_SIZE * 2, NULL, configMAX_PRIORITIES-2,
                     &StatesHandler) != pdPASS) {
         goto err_statesHandler;
+    }
+    if (xTaskCreate(vExercise4draw, "Exercise4draw", mainGENERIC_STACK_SIZE * 2, NULL,
+                    5, &Exercise4draw) != pdPASS) {
+        goto err_exercise4_draw;
+    }
+    if (xTaskCreate(vExercise4task1, "Exercise4task1", mainGENERIC_STACK_SIZE * 2, NULL,
+                    1, &Exercise4task1) != pdPASS) {
+        goto err_exercise4_task1;
+    }
+    if (xTaskCreate(vExercise4task2, "Exercise4task2", mainGENERIC_STACK_SIZE * 2, NULL,
+                    2, &Exercise4task2) != pdPASS) {
+        goto err_exercise4_task2;
+    }
+    if (xTaskCreate(vExercise4task3, "Exercise4task3", mainGENERIC_STACK_SIZE * 2, NULL,
+                    3, &Exercise4task3) != pdPASS) {
+        goto err_exercise4_task3;
+    }
+    if (xTaskCreate(vExercise4task4, "Exercise4task4", mainGENERIC_STACK_SIZE * 2, NULL,
+                    4, &Exercise4task4) != pdPASS) {
+        goto err_exercise4_task4;
     }
 
     //Suspend all tasks for the exercises
@@ -240,7 +267,11 @@ int main(int argc, char *argv[])
     vTaskSuspend(Exercise3button1);
     vTaskSuspend(Exercise3button2);
     vTaskSuspend(Exercise3count);
-    vTaskSuspend(Exercise4);
+    vTaskSuspend(Exercise4draw);
+    vTaskSuspend(Exercise4task1);
+    vTaskSuspend(Exercise4task2);
+    vTaskSuspend(Exercise4task3);
+    vTaskSuspend(Exercise4task4);
     //Note: The timer is created in a dormant state and thus doesn't need to be stopped here
 
     tumFUtilPrintTaskStateList();
@@ -274,9 +305,17 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 
 //Error handling -> Deinitialisation of all the things that were created
+err_exercise4_task4:
+    vTaskDelete(Exercise4task3);
+err_exercise4_task3:
+    vTaskDelete(Exercise4task2);
+err_exercise4_task2:
+    vTaskDelete(Exercise4task1);
+err_exercise4_task1:
+    vTaskDelete(Exercise4draw);
+err_exercise4_draw:
+    vTaskDelete(StatesHandler);
 err_statesHandler:
-    vTaskDelete(Exercise4);
-err_exercise4:
     xTimerDelete(Exercise3timer, portMAX_DELAY);
 err_exercise3timer:
     vTaskDelete(Exercise3count);
@@ -295,6 +334,8 @@ err_exercise3_draw:
 err_exercise2:
     vTaskDelete(BufferSwap);
 err_bufferswap:
+    vSemaphoreDelete(task3Notify);
+err_task3Notify:
     vSemaphoreDelete(exercise4Mutex);
 err_ex4_sem:
     vSemaphoreDelete(exercise3Mutex);

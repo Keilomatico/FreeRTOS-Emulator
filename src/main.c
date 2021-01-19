@@ -95,7 +95,7 @@ void setFont(char *fontName, ssize_t fontSize)
 void vChangeState(void *pvParameters)
 {
     char state = 0;
-    vTaskResume(DemoTask1);
+    vTaskResume(DemoTask2);
     while(1)
     {
         xGetButtonInput(); // Update global input
@@ -142,7 +142,7 @@ void vDemoTask1(void *pvParameters)
 
     while (1) {
         if (DrawSignal) {   //Check if the Semaphore has been initialized
-            cur_font = tumFontGetCurFontHandle(); 
+ /*           cur_font = tumFontGetCurFontHandle(); 
             xSemaphoreTake(DrawSignal, portMAX_DELAY);
 
             //Take the ScreenLock to start drawing
@@ -184,7 +184,7 @@ void vDemoTask1(void *pvParameters)
             tumFontPutFontHandle(cur_font);
 
             //Drawing is done -> give the ScreenLock back
-            xSemaphoreGive(ScreenLock);
+            xSemaphoreGive(ScreenLock);*/
         }
     }
 }
@@ -209,38 +209,20 @@ void vDemoTask2(void *pvParameters)
 
             setFont(FONT3, LEVEL_FONT_SIZE);
             sprintf(my_string, "Level");
-
-            // Center the string
-            if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
-                //Centered in x and in y with the bottom line at LEVEL_Y
-                tumDrawText(my_string,
-                            SCREEN_WIDTH / 2 - my_string_width / 2,
-                            LEVEL_Y - LEVEL_FONT_SIZE,
-                            TUMBlue);
+            tumDrawText(my_string, SCREEN_WIDTH / 2, LEVEL_Y - LEVEL_FONT_SIZE, TUMBlue);
 
             setFont(FONT4, NUMBERS_FONT_SIZE);
             for(int i=1; i<=10; i++) {
                 sprintf(my_string, "%d", i);
-                if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
-                    //Print two rows, each with 5 numbers
-                    //x: Center the whole block of numbers and space them with NUMBERS_FONT_SIZE * 1.5
-                    //y: Start halb a font size below the LEVEL_Y and space first and second line with NUMBERS_SPACING
-                    tumDrawText(my_string,
-                                SCREEN_WIDTH/2 - 2*NUMBERS_SPACING + (i-1)%5 * NUMBERS_SPACING - my_string_width/2,
+                tumDrawText(my_string,
+                                SCREEN_WIDTH/2 - 2*NUMBERS_SPACING + (i-1)%5 * NUMBERS_SPACING,
                                 LEVEL_Y + (i-1)/5 * NUMBERS_SPACING + NUMBERS_FONT_SIZE / 2,
                                 Black);
             }
 
             setFont(FONT3, HIGHSCORE_FONT_SIZE);
             sprintf(my_string, "Highscores");
-
-            // Center the string
-            if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
-                //Centered in x and in y with the bottom line at LEVEL_Y
-                tumDrawText(my_string,
-                            SCREEN_WIDTH / 2 - my_string_width / 2,
-                            HIGHSCORE_Y - HIGHSCORE_FONT_SIZE,
-                            TUMBlue);
+            tumDrawText(my_string, SCREEN_WIDTH / 2, HIGHSCORE_Y - HIGHSCORE_FONT_SIZE, TUMBlue);
 
             setFont(FONT4, NAMES_FONT_SIZE);
 

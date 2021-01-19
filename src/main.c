@@ -18,7 +18,6 @@
 
 #define FONT1           "IBMPlexSans-Bold.ttf"
 #define FONT2     		"IBMPlexSans-ThinItalic.ttf"
-#define FONT3		    "IBMPlexSans-Medium.ttf"
 #define FONT4			"IBMPlexSans-Thin.ttf"
 
 #define LEVEL_FONT_SIZE     45
@@ -80,7 +79,7 @@ void vDemoTask2(void *pvParameters)
             // Clear screen
             tumDrawClear(White);
 
-            setFont(FONT3, LEVEL_FONT_SIZE);
+            setFont(FONT4, LEVEL_FONT_SIZE);
             sprintf(my_string, "Level");
             tumDrawText(my_string, SCREEN_WIDTH / 2, LEVEL_Y - LEVEL_FONT_SIZE, TUMBlue);
 
@@ -88,13 +87,22 @@ void vDemoTask2(void *pvParameters)
             sprintf(my_string, "1 2 3");
             tumDrawText(my_string, SCREEN_WIDTH/2, LEVEL_Y + NUMBERS_FONT_SIZE / 2, Black);
 
-            setFont(FONT3, HIGHSCORE_FONT_SIZE);
+            //All the other statements can be uncommented but make the apperance of the fault quicker
+            setFont(FONT4, HIGHSCORE_FONT_SIZE);
             sprintf(my_string, "Highscores");
             tumDrawText(my_string, SCREEN_WIDTH / 2, HIGHSCORE_Y - HIGHSCORE_FONT_SIZE, TUMBlue);
 
             setFont(FONT4, NAMES_FONT_SIZE);
             sprintf(my_string, "Player");
             tumDrawText(my_string, SCREEN_WIDTH / 5, HIGHSCORE_Y + NAMES_FONT_SIZE, Black);
+
+            for(int i=1; i<=10; i++) {
+                sprintf(my_string, "%d", i);
+                tumDrawText(my_string,
+                            SCREEN_WIDTH/2 + (i-1)%5 * 20,
+                            LEVEL_Y + (i-1)/5 * 20 + NUMBERS_FONT_SIZE / 2,
+                            Black);
+            }
 
             //Switch back to the old font
             tumFontSelectFontFromHandle(cur_font);
@@ -124,7 +132,6 @@ int main(int argc, char *argv[])
 
     tumFontLoadFont(FONT1, DEFAULT_FONT_SIZE);
     tumFontLoadFont(FONT2, DEFAULT_FONT_SIZE);
-    tumFontLoadFont(FONT3, DEFAULT_FONT_SIZE);
     tumFontLoadFont(FONT4, DEFAULT_FONT_SIZE);
 
     DrawSignal = xSemaphoreCreateBinary();

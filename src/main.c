@@ -1,8 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
-
-#include <SDL2/SDL_scancode.h>
 
 #include "FreeRTOS.h"
 #include "queue.h"
@@ -24,15 +21,12 @@
 #define FONT3		    "IBMPlexSans-Medium.ttf"
 #define FONT4			"IBMPlexSans-Thin.ttf"
 
-#define TITLE_FONT_SIZE     40
-#define PLAYER_FONT_SIZE    25
 #define LEVEL_FONT_SIZE     45
 #define NUMBERS_FONT_SIZE   35
 #define HIGHSCORE_FONT_SIZE 40
 #define NAMES_FONT_SIZE     20
 
 #define LEVEL_Y             SCREEN_HEIGHT / 5
-#define NUMBERS_SPACING     NUMBERS_FONT_SIZE * 1.5
 #define HIGHSCORE_Y         SCREEN_HEIGHT * 3 / 5
 
 #define mainGENERIC_PRIORITY (tskIDLE_PRIORITY)
@@ -73,10 +67,7 @@ void vSwapBuffers(void *pvParameters)
 
 void vDemoTask2(void *pvParameters)
 {
-    
-    unsigned int score = 1000;
     char my_string[100];        //array to temporarily store text
-    int my_string_width = 0;    //temporarily store the width of the text
     font_handle_t cur_font;
 
     while (1) {
@@ -95,10 +86,7 @@ void vDemoTask2(void *pvParameters)
 
             setFont(FONT4, NUMBERS_FONT_SIZE);
             sprintf(my_string, "1 2 3");
-            tumDrawText(my_string,
-                            SCREEN_WIDTH/2 - 2*NUMBERS_SPACING,
-                            LEVEL_Y + NUMBERS_FONT_SIZE / 2,
-                            Black);
+            tumDrawText(my_string, SCREEN_WIDTH/2, LEVEL_Y + NUMBERS_FONT_SIZE / 2, Black);
 
             setFont(FONT3, HIGHSCORE_FONT_SIZE);
             sprintf(my_string, "Highscores");

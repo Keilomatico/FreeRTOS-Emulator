@@ -1,10 +1,8 @@
-//#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-//#include <time.h>
 #include <inttypes.h>
 
-//#include <SDL2/SDL_scancode.h>
+#include <SDL2/SDL_scancode.h>
 
 #include "FreeRTOS.h"
 #include "queue.h"
@@ -21,45 +19,24 @@
 
 #define FRAMERATE       50
 
-#define BOLD_FONT           "IBMPlexSans-Bold.ttf"
-#define THINITALIC_FONT     "IBMPlexSans-ThinItalic.ttf"
-#define MEDIUM_FONT		    "IBMPlexSans-Medium.ttf"
-#define THIN_FONT			"IBMPlexSans-Thin.ttf"
-
-#define TITLE_FONT          BOLD_FONT
-#define TITLE_FONT_SIZE     40
-#define PLAYER_FONT         THINITALIC_FONT
-#define PLAYER_FONT_SIZE    25
-
-#define LEVEL_FONT          MEDIUM_FONT
-#define LEVEL_FONT_SIZE     45
-#define LEVEL_Y             SCREEN_HEIGHT / 5
-#define NUMBERS_FONT        THIN_FONT
-#define NUMBERS_FONT_SIZE   35
-#define NUMBERS_SPACING     NUMBERS_FONT_SIZE * 1.5
-
-#define HIGHSCORE_FONT      MEDIUM_FONT
-#define HIGHSCORE_FONT_SIZE 40
-#define HIGHSCORE_Y         SCREEN_HEIGHT * 3 / 5
-#define NAMES_FONT          THIN_FONT
-#define NAMES_FONT_SIZE     20
-
-
 #define FONT1           "IBMPlexSans-Bold.ttf"
 #define FONT2     		"IBMPlexSans-ThinItalic.ttf"
 #define FONT3		    "IBMPlexSans-Medium.ttf"
 #define FONT4			"IBMPlexSans-Thin.ttf"
 
-#define SIZE1			10
-#define SIZE2			18
-#define SIZE3			20
-#define SIZE4			25
-#define SIZE5			30
+#define TITLE_FONT_SIZE     40
+#define PLAYER_FONT_SIZE    25
+#define LEVEL_FONT_SIZE     45
+#define NUMBERS_FONT_SIZE   35
+#define HIGHSCORE_FONT_SIZE 40
+#define NAMES_FONT_SIZE     20
+
+#define LEVEL_Y             SCREEN_HEIGHT / 5
+#define NUMBERS_SPACING     NUMBERS_FONT_SIZE * 1.5
+#define HIGHSCORE_Y         SCREEN_HEIGHT * 3 / 5
 
 #define mainGENERIC_PRIORITY (tskIDLE_PRIORITY)
 #define mainGENERIC_STACK_SIZE ((unsigned short)2560)
-
-#define Light_Gray   (unsigned int)(0xC0C0C0)
 
 static TaskHandle_t DemoTask1 = NULL;
 static TaskHandle_t DemoTask2 = NULL;
@@ -157,66 +134,8 @@ void vSwapBuffers(void *pvParameters)
     }
 }
 
-/*void vDemoTask1(void *pvParameters)
-{
-    char my_string[100];
-    font_handle_t cur_font;
-
-    while (1) {
-        xSemaphoreTake(DrawSignal, portMAX_DELAY);
-        xSemaphoreTake(ScreenLock, portMAX_DELAY);
-
-        tumDrawClear(White); // Clear screen
-
-        cur_font = tumFontGetCurFontHandle();
-
-        setFont(FONT1, (ssize_t)SIZE1);
-        sprintf(my_string, "Hello From Screen 1");
-        tumDrawText(my_string, 30, 30, TUMBlue);
-
-        setFont(FONT2, (ssize_t)SIZE2);
-        sprintf(my_string, "Test1b");
-        tumDrawText(my_string, 150, 30, TUMBlue);
-
-        tumFontSelectFontFromHandle(cur_font);
-        tumFontPutFontHandle(cur_font);
-
-
-
-        cur_font = tumFontGetCurFontHandle();
-
-        setFont(FONT3, (ssize_t)SIZE2);
-        sprintf(my_string, "Test2");
-        tumDrawText(my_string, 30, 60, TUMBlue);
-        
-        setFont(FONT4, (ssize_t)SIZE3);
-        sprintf(my_string, "Test3");
-        tumDrawText(my_string, 30, 100, TUMBlue);
-
-        setFont(FONT3, (ssize_t)SIZE4);
-        sprintf(my_string, "Test4");
-        tumDrawText(my_string, 30, 150, TUMBlue);
-
-        setFont(FONT4, (ssize_t)SIZE5);
-        sprintf(my_string, "Test5");
-        tumDrawText(my_string, 30, 200, TUMBlue);
-
-        
-
-        //Switch back to the old font
-        tumFontSelectFontFromHandle(cur_font);
-        tumFontPutFontHandle(cur_font);
-
-        xSemaphoreGive(ScreenLock);
-    }
-}*/
-
 void vDemoTask1(void *pvParameters)
 {
-    //Stores the currently chosen mode (single- or two-player-mode); Init with single-player-mode
-    enum mode {single, two} playmode = single;
-    unsigned int color;
-
     char my_string[100];        //array to temporarily store text
     int my_string_width = 0;    //temporarily store the width of the text
     font_handle_t cur_font;
@@ -232,7 +151,7 @@ void vDemoTask1(void *pvParameters)
             tumDrawClear(White);
 
             //Select new font and size for the title
-            setFont(TITLE_FONT, TITLE_FONT_SIZE);
+            setFont(FONT1, TITLE_FONT_SIZE);
 
             sprintf(my_string, "Welcome to Tetris");
 
@@ -244,31 +163,21 @@ void vDemoTask1(void *pvParameters)
                             TUMBlue);
 
             //Select new font and size for the modes
-            setFont(PLAYER_FONT, PLAYER_FONT_SIZE);
-
-            if(playmode == single)
-                color = Black;
-            else
-                color = Light_Gray;
+            setFont(FONT2, PLAYER_FONT_SIZE);
 
             sprintf(my_string, "1 Player");
             if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
                 tumDrawText(my_string,
                             SCREEN_WIDTH / 4 - my_string_width / 2,
                             SCREEN_HEIGHT * 2 / 3 - PLAYER_FONT_SIZE / 2,
-                            color);
-
-            if(playmode == two)
-                color = Black;
-            else
-                color = Light_Gray;
+                            Black);;
 
             sprintf(my_string, "2 Player");
             if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
                 tumDrawText(my_string,
                             SCREEN_WIDTH * 3 / 4 - my_string_width / 2,
                             SCREEN_HEIGHT * 2 / 3 - PLAYER_FONT_SIZE / 2,
-                            color);
+                            Gray);
 
             //Switch back to the old font
             tumFontSelectFontFromHandle(cur_font);
@@ -282,8 +191,6 @@ void vDemoTask1(void *pvParameters)
 
 void vDemoTask2(void *pvParameters)
 {
-    char level = 1;             //Chosen Level. Can be 1 to 10
-    unsigned int color;
     
     unsigned int score = 1000;
     char my_string[100];        //array to temporarily store text
@@ -300,9 +207,7 @@ void vDemoTask2(void *pvParameters)
             // Clear screen
             tumDrawClear(White);
 
-            //----------------------Print Level------------------------------------
-            //Select new font and size for the "level"
-            setFont(LEVEL_FONT, LEVEL_FONT_SIZE);
+            setFont(FONT3, LEVEL_FONT_SIZE);
             sprintf(my_string, "Level");
 
             // Center the string
@@ -313,13 +218,8 @@ void vDemoTask2(void *pvParameters)
                             LEVEL_Y - LEVEL_FONT_SIZE,
                             TUMBlue);
 
-            setFont(NUMBERS_FONT, NUMBERS_FONT_SIZE);
+            setFont(FONT4, NUMBERS_FONT_SIZE);
             for(int i=1; i<=10; i++) {
-                if(i == level)
-                    color = Black;
-                else
-                    color = Light_Gray;
-
                 sprintf(my_string, "%d", i);
                 if (!tumGetTextSize((char *)my_string, &my_string_width, NULL))
                     //Print two rows, each with 5 numbers
@@ -328,11 +228,10 @@ void vDemoTask2(void *pvParameters)
                     tumDrawText(my_string,
                                 SCREEN_WIDTH/2 - 2*NUMBERS_SPACING + (i-1)%5 * NUMBERS_SPACING - my_string_width/2,
                                 LEVEL_Y + (i-1)/5 * NUMBERS_SPACING + NUMBERS_FONT_SIZE / 2,
-                                color);
+                                Black);
             }
 
-            //----------------------Print Highscore------------------------------------
-            setFont(HIGHSCORE_FONT, HIGHSCORE_FONT_SIZE);
+            setFont(FONT3, HIGHSCORE_FONT_SIZE);
             sprintf(my_string, "Highscores");
 
             // Center the string
@@ -343,7 +242,7 @@ void vDemoTask2(void *pvParameters)
                             HIGHSCORE_Y - HIGHSCORE_FONT_SIZE,
                             TUMBlue);
 
-            setFont(NAMES_FONT, NAMES_FONT_SIZE);
+            setFont(FONT4, NAMES_FONT_SIZE);
 
             for(int i=0; i<3; i++)
             {
